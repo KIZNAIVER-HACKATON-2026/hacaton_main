@@ -10,6 +10,7 @@
 
 $defaults = [
     'host'    => 'MySQL-8.4',
+    'port'    => 3306,
     'name'    => 'shift03',
     'user'    => 'root',
     'pass'    => '',

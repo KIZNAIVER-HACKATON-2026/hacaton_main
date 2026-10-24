@@ -6,7 +6,8 @@
  * POST action=start {nickname}       — найти или создать игрока, отдать сейв
  *
  * Ответы:
- *   { ok:true, db:true, exists:bool, nickname, save:{...}|null, best:int|null }
+ *   { ok:true, db:true, exists:bool, nickname, save:{...}|null, best:int|null,
+ *     dashboard:{ profile, best, rank, records, average } }
  *   { ok:false, db:false, error:"db_unavailable" }   — база недоступна (503)
  */
 
@@ -50,6 +51,7 @@ if ($action === 'status') {
         'nickname' => $player['nickname'],
         'save'     => $save,
         'best'     => $summary,
+        'dashboard' => db_player_dashboard($playerId),
     ]);
 }
 
@@ -84,6 +86,7 @@ if ($action === 'start') {
         'player_id' => $playerId,
         'save'     => save_for_player($playerId),
         'best'     => db_record_summary_best($playerId),
+        'dashboard' => db_player_dashboard($playerId),
     ]);
 }
 

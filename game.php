@@ -6,17 +6,19 @@
  * порядке, звонки диспетчера, финал с отправкой результата в БД.
  *
  * Контент и баланс приходят из patient_data.php (сервер), логика — в
- * assets/js/shift.js. Страница работает и без ника (гостевой режим),
- * но тогда результат не попадает в топ.
+ * assets/js/shift.js. Вход выполняется только через личный кабинет на
+ * главной странице: ник уже сохранён до старта смены.
  */
 
 require_once __DIR__ . '/includes/bootstrap.php';
 require_once __DIR__ . '/patient_data.php';
 
 $nick = current_nickname();
-if ($nick !== null) {
-    remember_nickname($nick);
+if ($nick === null) {
+    header('Location: index.php#cabinet');
+    exit;
 }
+remember_nickname($nick);
 
 $players   = game_patients();
 $dispatches = shift_dispatches();
@@ -40,13 +42,9 @@ if ($nick !== null) {
   <link rel="stylesheet" href="assets/css/game.css?v=2.2">
   <link rel="stylesheet" href="assets/css/pixel-theme.css?v=2.2">
   <link rel="stylesheet" href="assets/css/pixel-window.css?v=2.2">
-  <link rel="stylesheet" href="assets/css/upgrades.css?v=2.2">
   <link rel="stylesheet" href="assets/css/readability.css?v=2.2">
 </head>
 <body class="game-body">
-
-<!-- Слой отображения прокачки оборудования на фоне помещения подстанции -->
-<div class="station-equipment-layer" id="station-equipment-layer" aria-hidden="true"></div>
 
 <svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
   <symbol id="i-pause" viewBox="0 0 24 24"><rect x="7" y="5" width="3.6" height="14" rx="1" fill="currentColor"/><rect x="13.4" y="5" width="3.6" height="14" rx="1" fill="currentColor"/></symbol>
@@ -85,10 +83,7 @@ if ($nick !== null) {
   </div>
 
   <div class="hud__right">
-    <button class="hud__btn hud__btn--upgrades" id="btn-upgrades-hud" type="button" title="Оснащение и прокачка подстанции">
-      <span class="hud__coin-icon">🛠️</span>
-      <span class="hud__coin-val">200 ₽</span>
-    </button>
+    <a class="hud__btn hud__btn--cabinet" href="index.php" title="Вернуться в личный кабинет">Кабинет</a>
     <button class="hud__btn" id="btn-pause" type="button" title="Пауза (P)">
       <svg class="ico" aria-hidden="true"><use href="#i-pause"/></svg>
     </button>
@@ -241,55 +236,6 @@ if ($nick !== null) {
     </div>
   </div>
 
-  <!-- ===================== МОДАЛЬНОЕ ОКНО ПРОКАЧКИ ПОДСТАНЦИИ ===================== -->
-  <div class="upgrades-modal" id="modal-upgrades" hidden>
-    <div class="upgrades-card">
-      <div class="upgrades-header">
-        <div class="upgrades-title-wrap">
-          <div class="upgrades-badge">🛠️ Склад медтехники · Подстанция 03</div>
-          <h2 class="upgrades-title">Оснащение и модернизация</h2>
-          <p class="upgrades-sub">Закупка оборудования за счёт спасённых пациентов и бюджета ночных дежурств</p>
-        </div>
-        <button class="upgrades-close" id="btn-close-upgrades" type="button" aria-label="Закрыть">✕ Закрыть</button>
-      </div>
-
-      <div class="upgrades-stats">
-        <div class="upgrades-stat-cell">
-          <span class="upgrades-stat-icon">💰</span>
-          <div class="upgrades-stat-data">
-            <span class="upgrades-stat-label">Бюджет подстанции</span>
-            <span class="upgrades-stat-val" id="upgrades-budget-val">200 ₽</span>
-          </div>
-        </div>
-        <div class="upgrades-stat-cell">
-          <span class="upgrades-stat-icon">⭐</span>
-          <div class="upgrades-stat-data">
-            <span class="upgrades-stat-label">Опыт дежурств</span>
-            <span class="upgrades-stat-val upgrades-stat-val--mint" id="upgrades-xp-val">50 XP</span>
-          </div>
-        </div>
-        <div class="upgrades-stat-cell">
-          <span class="upgrades-stat-icon">❤️</span>
-          <div class="upgrades-stat-data">
-            <span class="upgrades-stat-label">Спасённых жизней</span>
-            <span class="upgrades-stat-val upgrades-stat-val--mint" id="upgrades-saved-val">0</span>
-          </div>
-        </div>
-        <div class="upgrades-stat-cell">
-          <span class="upgrades-stat-icon">🏥</span>
-          <div class="upgrades-stat-data">
-            <span class="upgrades-stat-label">Статус оснащения</span>
-            <span class="upgrades-stat-val" id="upgrades-level-val">1 / 6</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="upgrades-grid" id="upgrades-grid">
-        <!-- Карточки оборудования загружаются из upgrades.js -->
-      </div>
-    </div>
-  </div>
-
 </main>
 
 <script>
@@ -307,7 +253,6 @@ window.SHIFT = <?= json_encode([
 ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 </script>
 <script src="assets/js/pixel-art.js?v=2.2"></script>
-<script src="assets/js/upgrades.js?v=2.2"></script>
 <script src="assets/js/shift.js?v=2.2"></script>
 </body>
 </html>

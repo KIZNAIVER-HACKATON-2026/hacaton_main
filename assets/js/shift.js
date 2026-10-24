@@ -231,19 +231,13 @@
         b.disabled = true;
       });
 
-      var bonusLamp = (window.STATION_SYSTEM && window.STATION_SYSTEM.getBonusDiagPoints) ? window.STATION_SYSTEM.getBonusDiagPoints() : 0;
-      var totalAdded = (CFG.pointsCorrect || 50) + bonusLamp;
+      var totalAdded = CFG.pointsCorrect || 50;
 
       S.score += totalAdded;
       S.diagnoses += 1;
 
-      // Награда в бюджет подстанции за верный диагноз
-      if (window.STATION_SYSTEM && window.STATION_SYSTEM.addReward) {
-        window.STATION_SYSTEM.addReward(50, 25, false);
-      }
-
       renderHud();
-      toast('Верно: ' + p.correctTitle + (bonusLamp ? ' (+' + bonusLamp + ' за светильник)' : '') + ' (+50 ₽ в бюджет)', 'ok');
+      toast('Верно: ' + p.correctTitle + '. Прогресс будет начислен после завершения смены.', 'ok');
 
       setTimeout(function () {
         S.phase = 'treat';
@@ -253,25 +247,12 @@
     } else {
       btn.classList.add('is-wrong');
 
-      // Проверка бонуса дефибриллятора «Аксион» (защита от первой ошибки)
-      var hasDefib = (window.STATION_SYSTEM && window.STATION_SYSTEM.getBonusDefibrillator) ? window.STATION_SYSTEM.getBonusDefibrillator() : false;
-      var defibTriggered = false;
-
-      if (hasDefib && !S.defibUsed) {
-        S.defibUsed = true;
-        defibTriggered = true;
-        toast('Дефибриллятор «Аксион»: ошибка аннулирована без штрафа репутации!', 'ok');
-      } else {
-        S.reputation = Math.max(0, S.reputation - (CFG.penaltyDiagnosis || 10));
-      }
-
+      S.reputation = Math.max(0, S.reputation - (CFG.penaltyDiagnosis || 10));
       S.score = Math.max(0, S.score - (CFG.penaltyDiagnosis || 10));
       S.mistakes += 1;
       renderHud();
 
-      el.diagHint.textContent = defibTriggered
-        ? 'Ошибка, но дефибриллятор защитил репутацию! Попробуй снова.'
-        : 'Неверно. −' + (CFG.penaltyDiagnosis || 10) + ' очков и репутации. Посмотри на показатели ещё раз.';
+      el.diagHint.textContent = 'Неверно. −' + (CFG.penaltyDiagnosis || 10) + ' очков и репутации. Посмотри на показатели ещё раз.';
       el.diagHint.className = 'hint hint--bad';
 
       setTimeout(function () { btn.classList.remove('is-wrong'); }, 900);
@@ -336,19 +317,13 @@
       if (S.treatSeq.length === p.treatment.length) {
         S.treatBusy = true;
 
-        var fridgeBonus = (window.STATION_SYSTEM && window.STATION_SYSTEM.getBonusTreatMultiplier) ? window.STATION_SYSTEM.getBonusTreatMultiplier() : 1.0;
-        var earnedPoints = Math.round((CFG.pointsTreatment || 70) * fridgeBonus);
+        var earnedPoints = CFG.pointsTreatment || 70;
 
         S.score += earnedPoints;
         S.saved += 1;
 
-        // Награда за успешное лечение пациента в бюджет подстанции
-        if (window.STATION_SYSTEM && window.STATION_SYSTEM.addReward) {
-          window.STATION_SYSTEM.addReward(80, 40, true);
-        }
-
         renderHud();
-        toast('Пациент спасён! +' + earnedPoints + ' очков, +80 ₽ в бюджет подстанции', 'ok');
+        toast('Пациент спасён! +' + earnedPoints + ' очков. Награда кабинета — после финала.', 'ok');
 
         setTimeout(function () {
           S.treatBusy = false;
@@ -545,17 +520,11 @@
     } else if (reason === 'time') {
       badge = 'Конец смены';
       title = 'Смена закончилась';
-      sub = 'Время вышло. Принято пациентов: ' + S.index + ' из ' + total + '.';
-      if (window.STATION_SYSTEM && window.STATION_SYSTEM.addReward) {
-        window.STATION_SYSTEM.addReward(150, 60, false);
-      }
+      sub = 'Время вышло. Принято пациентов: ' + S.index + ' из ' + total + '. Награда зависит от спасённых пациентов.';
     } else {
       badge = 'Смена сдана';
       title = 'Все пациенты приняты';
-      sub = 'Ночь прошла без потерь. Начислена премия за смену: +250 ₽!';
-      if (window.STATION_SYSTEM && window.STATION_SYSTEM.addReward) {
-        window.STATION_SYSTEM.addReward(250, 100, false);
-      }
+      sub = 'Ночь прошла без потерь. Прогресс кабинета начисляется после записи результата.';
     }
 
     el.finalBadge.textContent = badge;
@@ -588,7 +557,7 @@
     fetch(ENDPOINTS.score, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({ nickname: NICK, score: S.score, token: S.token })
+      body: JSON.stringify({ nickname: NICK, score: S.score, token: S.token, mode: 'shift', saved: S.saved, success: S.saved >= PATIENTS.length })
     })
       .then(function (r) { return r.json().catch(function () { return null; }); })
       .then(function (res) {
@@ -761,15 +730,6 @@
       renderPatient();
       renderDiagnoses();
     } else {
-      // Применяем бонусы оснащения подстанции при старте новой смены
-      if (window.STATION_SYSTEM) {
-        if (window.STATION_SYSTEM.getBonusTime) {
-          S.remaining += window.STATION_SYSTEM.getBonusTime();
-        }
-        if (window.STATION_SYSTEM.getBonusRep) {
-          S.reputation = Math.min(100, S.reputation + window.STATION_SYSTEM.getBonusRep());
-        }
-      }
       beginPatient();
     }
 

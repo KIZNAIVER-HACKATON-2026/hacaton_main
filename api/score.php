@@ -2,12 +2,13 @@
 /**
  * api/score.php — отправка результата смены.
  *
- * POST {nickname, score, token}
- *   token — UUID, создаётся клиентом один раз на финал смены.
+ * POST {nickname, score, token, mode?, saved?, success?}
+ *   token — UUID, создаётся клиентом один раз на финал игры.
  *           Повторная отправка с тем же токеном не создаёт дубль
- *           (защита от даблклика и повторного нажатия «Ещё раз»).
+ *           и не начисляет прогресс повторно.
+ *   mode — shift | operation; saved и success нужны для серверной награды.
  *
- * Ответ: { ok:true, db:true, score, best, rank, record_id }
+ * Ответ: { ok:true, db:true, score, best, rank, record_id, profile }
  */
 
 declare(strict_types=1);
@@ -51,6 +52,16 @@ if ($summary === null) {
     jout(['ok' => false, 'db' => true, 'error' => 'submit_failed'], 500);
 }
 
+// Прогресс начисляется только для новой строки рекорда: повторная отправка
+// того же UUID не позволит фармить бюджет перезагрузкой страницы.
+$mode = ($data['mode'] ?? 'shift') === 'operation' ? 'operation' : 'shift';
+$saved = is_numeric($data['saved'] ?? null) ? (int) $data['saved'] : 0;
+$success = !empty($data['success']);
+$profile = null;
+if (!empty($summary['is_new'])) {
+    $profile = db_apply_game_reward($playerId, $mode, $saved, $success);
+}
+
 jout([
     'ok'        => true,
     'db'        => true,
@@ -59,4 +70,5 @@ jout([
     'best'      => $summary['best'],
     'rank'      => $summary['rank'],
     'record_id' => $summary['record_id'],
+    'profile'   => $profile,
 ]);

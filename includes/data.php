@@ -8,6 +8,7 @@
  */
 
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/progression.php';
 
 /** Есть ли живое подключение к БД (для бейджа на главной). */
 function data_db_ok(): bool
@@ -234,11 +235,10 @@ function db_save_state(int $playerId, array $state): bool
     if ($json === false) return false;
 
     try {
-        $st = $pdo->prepare(
-            'INSERT INTO saves (player_id, state_json)
-             VALUES (?, ?)
-             ON DUPLICATE KEY UPDATE state_json = VALUES(state_json), saved_at = CURRENT_TIMESTAMP'
-        );
+        $sql = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite'
+            ? 'INSERT INTO saves (player_id, state_json) VALUES (?, ?) ON CONFLICT(player_id) DO UPDATE SET state_json = excluded.state_json, saved_at = CURRENT_TIMESTAMP'
+            : 'INSERT INTO saves (player_id, state_json) VALUES (?, ?) ON DUPLICATE KEY UPDATE state_json = VALUES(state_json), saved_at = CURRENT_TIMESTAMP';
+        $st = $pdo->prepare($sql);
         $st->execute([$playerId, $json]);
         return true;
     } catch (Throwable $e) {
@@ -288,15 +288,19 @@ function db_submit_score(int $playerId, int $score, string $token): ?array
         $st->execute([$token]);
         $recordId = $st->fetchColumn();
 
+        $isNew = false;
         if ($recordId === false) {
             $ins = $pdo->prepare('INSERT INTO records (player_id, score, submission_token) VALUES (?, ?, ?)');
             $ins->execute([$playerId, $score, $token]);
             $recordId = (int) $pdo->lastInsertId();
+            $isNew = true;
         } else {
             $recordId = (int) $recordId;
         }
 
-        return db_record_summary($playerId, $recordId);
+        $summary = db_record_summary($playerId, $recordId);
+        if ($summary !== null) $summary['is_new'] = $isNew;
+        return $summary;
     } catch (Throwable $e) {
         error_log('[shift03] submit score: ' . $e->getMessage());
         return null;
@@ -341,4 +345,248 @@ function db_diagnoses(): array
         error_log('[shift03] diagnoses: ' . $e->getMessage());
         return [];
     }
+}
+
+/* ==========================================================================
+   Личный кабинет и постоянная прогрессия
+   ========================================================================== */
+
+function db_profile_table_exists(): bool
+{
+    static $exists = null;
+    if ($exists !== null) return $exists;
+
+    $pdo = db_or_null();
+    if (!$pdo) return $exists = false;
+
+    try {
+        if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') {
+            $st = $pdo->prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'player_progress'");
+            $st->execute();
+            return $exists = (bool) $st->fetchColumn();
+        }
+
+        $st = $pdo->query("SHOW TABLES LIKE 'player_progress'");
+        return $exists = (bool) $st->fetchColumn();
+    } catch (Throwable $e) {
+        return $exists = false;
+    }
+}
+
+/** Привести строку прогресса к контракту фронтенда. */
+function db_profile_normalize(array $row = []): array
+{
+    $profile = progression_default_profile();
+    foreach (['budget', 'xp', 'total_saved', 'shifts_finished', 'operations_finished', 'operations_success', 'hospital_level', 'streak'] as $key) {
+        if (isset($row[$key])) $profile[$key] = max(0, (int) $row[$key]);
+    }
+
+    $equipment = $row['equipment_json'] ?? $row['equipment'] ?? [];
+    if (is_string($equipment)) $equipment = json_decode($equipment, true);
+    if (is_array($equipment)) {
+        $allowed = array_column(progression_equipment(), 'id');
+        $profile['equipment'] = array_values(array_unique(array_values(array_filter($equipment, function ($id) use ($allowed) {
+            return is_string($id) && in_array($id, $allowed, true);
+        }))));
+    }
+
+    $profile['hospital_level'] = min($profile['hospital_level'], count(progression_hospital_levels()));
+    $profile['last_played_on'] = $row['last_played_on'] ?? null;
+    return $profile;
+}
+
+function db_profile_ensure(int $playerId): bool
+{
+    if (!db_profile_table_exists()) return false;
+    $pdo = db_or_null();
+    if (!$pdo) return false;
+
+    try {
+        if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') {
+            $st = $pdo->prepare("INSERT INTO player_progress (player_id, equipment_json) VALUES (?, '[]') ON CONFLICT(player_id) DO NOTHING");
+        } else {
+            $st = $pdo->prepare("INSERT INTO player_progress (player_id, equipment_json) VALUES (?, '[]') ON DUPLICATE KEY UPDATE player_id = VALUES(player_id)");
+        }
+        $st->execute([$playerId]);
+        return true;
+    } catch (Throwable $e) {
+        error_log('[shift03] profile ensure: ' . $e->getMessage());
+        return false;
+    }
+}
+
+/** Постоянные данные кабинета игрока. При старой БД возвращает нулевой профиль. */
+function db_player_profile(int $playerId): array
+{
+    $default = progression_default_profile();
+    if (!db_profile_ensure($playerId)) return $default;
+
+    $pdo = db_or_null();
+    if (!$pdo) return $default;
+
+    try {
+        $st = $pdo->prepare('SELECT * FROM player_progress WHERE player_id = ? LIMIT 1');
+        $st->execute([$playerId]);
+        $row = $st->fetch();
+        return $row ? db_profile_normalize($row) : $default;
+    } catch (Throwable $e) {
+        error_log('[shift03] profile load: ' . $e->getMessage());
+        return $default;
+    }
+}
+
+function db_profile_store(int $playerId, array $profile): bool
+{
+    if (!db_profile_ensure($playerId)) return false;
+    $pdo = db_or_null();
+    if (!$pdo) return false;
+
+    try {
+        $st = $pdo->prepare(
+            'UPDATE player_progress
+                SET budget = ?, xp = ?, total_saved = ?, shifts_finished = ?,
+                    operations_finished = ?, operations_success = ?, hospital_level = ?,
+                    equipment_json = ?, streak = ?, last_played_on = ?
+              WHERE player_id = ?'
+        );
+        $st->execute([
+            max(0, (int) $profile['budget']),
+            max(0, (int) $profile['xp']),
+            max(0, (int) $profile['total_saved']),
+            max(0, (int) $profile['shifts_finished']),
+            max(0, (int) $profile['operations_finished']),
+            max(0, (int) $profile['operations_success']),
+            max(0, (int) $profile['hospital_level']),
+            json_encode($profile['equipment'] ?? [], JSON_UNESCAPED_UNICODE),
+            max(0, (int) $profile['streak']),
+            $profile['last_played_on'] ?: null,
+            $playerId,
+        ]);
+        return true;
+    } catch (Throwable $e) {
+        error_log('[shift03] profile store: ' . $e->getMessage());
+        return false;
+    }
+}
+
+/** Статистика, доступная в личном кабинете. */
+function db_player_dashboard(int $playerId): array
+{
+    $profile = db_player_profile($playerId);
+    $out = [
+        'profile' => $profile,
+        'best' => 0,
+        'rank' => null,
+        'records' => 0,
+        'average' => 0,
+        'total_score' => 0,
+    ];
+
+    $pdo = db_or_null();
+    if (!$pdo) return $out;
+
+    try {
+        $summary = db_record_summary_best($playerId);
+        if ($summary) {
+            $out['best'] = (int) $summary['best'];
+            $out['rank'] = (int) $summary['rank'];
+        }
+        $st = $pdo->prepare('SELECT COUNT(*) AS records, COALESCE(ROUND(AVG(score)),0) AS average, COALESCE(SUM(score),0) AS total_score FROM records WHERE player_id = ?');
+        $st->execute([$playerId]);
+        $row = $st->fetch() ?: [];
+        $out['records'] = (int) ($row['records'] ?? 0);
+        $out['average'] = (int) ($row['average'] ?? 0);
+        $out['total_score'] = (int) ($row['total_score'] ?? 0);
+    } catch (Throwable $e) {
+        error_log('[shift03] profile dashboard: ' . $e->getMessage());
+    }
+
+    return $out;
+}
+
+/** Купить улучшение. Проверка требований выполняется на сервере. */
+function db_purchase_progression(int $playerId, string $kind, string $id): array
+{
+    if (!db_profile_table_exists()) return ['ok' => false, 'error' => 'profile_schema_missing'];
+    $item = progression_catalog_item($kind, $id);
+    if (!$item) return ['ok' => false, 'error' => 'unknown_upgrade'];
+
+    $pdo = db_or_null();
+    if (!$pdo) return ['ok' => false, 'error' => 'db_unavailable'];
+
+    try {
+        $pdo->beginTransaction();
+        $profile = db_player_profile($playerId);
+
+        if ($kind === 'equipment') {
+            if (in_array($id, $profile['equipment'], true)) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => 'already_owned'];
+            }
+        } elseif ($profile['hospital_level'] + 1 !== (int) $id) {
+            $pdo->rollBack();
+            return ['ok' => false, 'error' => 'hospital_order'];
+        }
+
+        $hasRequirements = $profile['budget'] >= $item['cost']
+            && $profile['xp'] >= $item['xp']
+            && $profile['total_saved'] >= $item['saved']
+            && $profile['shifts_finished'] >= $item['shifts'];
+        if (!$hasRequirements) {
+            $pdo->rollBack();
+            return ['ok' => false, 'error' => 'requirements_not_met', 'profile' => $profile];
+        }
+
+        $profile['budget'] -= (int) $item['cost'];
+        if ($kind === 'equipment') {
+            $profile['equipment'][] = $id;
+        } else {
+            $profile['hospital_level'] = (int) $id;
+        }
+
+        if (!db_profile_store($playerId, $profile)) {
+            $pdo->rollBack();
+            return ['ok' => false, 'error' => 'store_failed'];
+        }
+        $pdo->commit();
+        return ['ok' => true, 'profile' => db_player_profile($playerId), 'item' => $item];
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        error_log('[shift03] purchase: ' . $e->getMessage());
+        return ['ok' => false, 'error' => 'purchase_failed'];
+    }
+}
+
+/** Награда за уникально записанный результат. Вызывается только после новой записи. */
+function db_apply_game_reward(int $playerId, string $mode, int $saved = 0, bool $success = false): ?array
+{
+    if (!db_profile_table_exists()) return null;
+    $profile = db_player_profile($playerId);
+    $today = date('Y-m-d');
+    $yesterday = date('Y-m-d', time() - 86400);
+
+    if ($profile['last_played_on'] !== $today) {
+        $profile['streak'] = $profile['last_played_on'] === $yesterday ? $profile['streak'] + 1 : 1;
+        $profile['last_played_on'] = $today;
+    }
+
+    if ($mode === 'operation') {
+        $profile['operations_finished'] += 1;
+        if ($success) {
+            $profile['operations_success'] += 1;
+            $profile['budget'] += 90;
+            $profile['xp'] += 50;
+        } else {
+            $profile['budget'] += 20;
+            $profile['xp'] += 10;
+        }
+    } else {
+        $saved = max(0, min(8, $saved));
+        $profile['shifts_finished'] += 1;
+        $profile['total_saved'] += $saved;
+        $profile['budget'] += ($saved * 65) + ($saved >= 8 ? 150 : 0);
+        $profile['xp'] += ($saved * 22) + ($saved >= 8 ? 45 : 0);
+    }
+
+    return db_profile_store($playerId, $profile) ? db_player_profile($playerId) : null;
 }

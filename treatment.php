@@ -7,7 +7,8 @@ $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Лечение — Смена 03</title>
-  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 <main class="patient-page">

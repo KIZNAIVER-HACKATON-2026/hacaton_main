@@ -1,0 +1,296 @@
+/* ==========================================================================
+   Смена 03 — базовая тема для внутренних страниц
+   (patient.php, diagnosis.php, treatment.php, rules.php)
+   Палитра та же, что на главной: снята с assets/img/fon_main.png.
+   ========================================================================== */
+
+:root {
+  --bg:        #070a0e;
+  --surface:   rgba(16, 23, 31, .88);
+  --surface-2: rgba(27, 38, 48, .9);
+  --line:      rgba(127, 176, 160, .18);
+  --text:      #e8f0ea;
+  --muted:     #8aa19a;
+  --primary:   #7fd6b0;
+  --primary-d: rgba(45, 104, 86, .95);
+  --danger:    #e2685a;
+  --success:   #7fd6b0;
+  --lamp:      #f0a95c;
+  --radius:    16px;
+  --font:      "Inter", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  --mono:      "JetBrains Mono", ui-monospace, Consolas, monospace;
+  --emoji:     "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Segoe UI Symbol", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  font-family: var(--font);
+  color: var(--text);
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(180deg, rgba(4, 7, 10, .84), rgba(4, 7, 10, .95)),
+    url("../img/fon_main.png");
+  background-image:
+    linear-gradient(180deg, rgba(4, 7, 10, .84), rgba(4, 7, 10, .95)),
+    image-set(url("../img/fon_main.webp") type("image/webp"), url("../img/fon_main.png") type("image/png"));
+  background-size: cover;
+  background-position: center 42%;
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--primary); }
+h1, h2, h3 { line-height: 1.15; margin: 0 0 12px; }
+p { margin: 0 0 12px; }
+
+.hidden { display: none !important; }
+
+/* ---------- карточка ---------- */
+
+.card,
+.patient-card,
+.rules-block {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, rgba(18, 26, 34, .9), rgba(10, 15, 21, .93));
+  box-shadow: 0 30px 70px -30px #000, inset 0 1px 0 rgba(190, 235, 220, .07);
+  backdrop-filter: blur(10px);
+}
+
+/* ---------- кнопки ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(9, 14, 19, .6);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform .15s, background .2s, border-color .2s, box-shadow .2s;
+}
+.btn:hover { transform: translateY(-1px); }
+
+.btn-primary {
+  border-color: rgba(127, 214, 176, .5);
+  background: linear-gradient(180deg, rgba(45, 104, 86, .95), rgba(26, 64, 53, .95));
+  box-shadow: inset 0 1px 0 rgba(214, 255, 240, .16), 0 12px 26px -14px #000;
+}
+.btn-primary:hover {
+  border-color: rgba(127, 214, 176, .8);
+  box-shadow: inset 0 1px 0 rgba(214, 255, 240, .22), 0 16px 32px -14px #000, 0 0 34px -12px rgba(127, 214, 176, .35);
+}
+
+.btn-ghost { color: var(--muted); }
+.btn-ghost:hover { color: var(--text); border-color: rgba(127, 214, 176, .4); background: rgba(127, 214, 176, .07); }
+
+.btn-lg { padding: 14px 24px; font-size: 15.5px; }
+.btn-icon { padding: 10px 13px; }
+
+/* ---------- пациент ---------- */
+
+.patient-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.patient-card {
+  padding: 30px 24px;
+  text-align: center;
+  margin-top: 16px;
+}
+
+.patient-avatar {
+  width: 92px;
+  height: 92px;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 44px;
+  font-family: var(--emoji);
+  line-height: 1;
+  border: 2px solid rgba(127, 214, 176, .28);
+  box-shadow: 0 0 34px -10px rgba(127, 214, 176, .45);
+}
+
+.patient-name { font-size: 25px; font-weight: 800; letter-spacing: -.01em; }
+.patient-meta { color: var(--muted); margin-bottom: 18px; }
+
+.symptoms {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.symptom {
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(240, 169, 92, .26);
+  background: rgba(240, 169, 92, .08);
+  color: #e8c9a8;
+  font-size: 12.5px;
+}
+
+.vitals {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 22px;
+}
+.vital {
+  border-radius: 11px;
+  border: 1px solid var(--line);
+  background: rgba(5, 9, 13, .5);
+  padding: 9px 10px;
+}
+.vital-label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.vital-value {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--lamp);
+}
+
+.patient-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 22px;
+}
+
+/* ---------- диагнозы ---------- */
+
+.diag-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  max-width: 640px;
+  margin: 8px auto 16px;
+}
+.diag-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 22px 12px;
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color .15s, transform .1s, background .2s;
+}
+.diag-btn:hover { border-color: var(--primary); }
+.diag-btn:active { transform: scale(.975); }
+.diag-icon { font-size: 38px; line-height: 1; font-family: var(--emoji); }
+.diag-label { font-size: 14.5px; font-weight: 700; }
+.diag-btn.wrong { border-color: var(--danger); animation: shake .3s; }
+.diag-btn.correct { border-color: var(--success); background: rgba(127, 214, 176, .12); }
+.diag-btn[disabled] { opacity: .55; cursor: not-allowed; }
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-6px); }
+  75%      { transform: translateX(6px); }
+}
+
+.section-title { font-size: 20px; font-weight: 800; }
+
+.form-error {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 9px;
+  border: 1px solid rgba(226, 104, 90, .34);
+  background: rgba(226, 104, 90, .1);
+  color: #f0b2a8;
+  font-size: 12.5px;
+}
+
+/* ---------- навигация ---------- */
+
+.rules-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+/* ---------- правила ---------- */
+
+.rules-page { max-width: 820px; margin: 0 auto; padding: 24px; }
+
+.rules-header { text-align: center; padding: 22px 0 32px; }
+.rules-title { font-size: clamp(38px, 8vw, 60px); font-weight: 900; letter-spacing: -.025em; }
+.rules-title span { color: var(--primary); }
+.rules-subtitle { color: var(--muted); margin-top: 8px; font-size: 17px; }
+
+.rules-content { display: flex; flex-direction: column; gap: 14px; }
+.rules-block { padding: 24px; }
+.rules-block h2 { font-size: 20px; margin-bottom: 12px; }
+.rules-block p { color: var(--muted); }
+
+.rules-list { padding-left: 22px; color: var(--muted); margin: 0; }
+.rules-list li { margin-bottom: 8px; }
+.rules-list li b { color: var(--text); }
+
+.rules-table { width: 100%; border-collapse: collapse; margin: 8px 0 14px; }
+.rules-table th,
+.rules-table td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--line); }
+.rules-table th { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.rules-table .pos { color: var(--success); font-weight: 700; }
+.rules-table .neg { color: var(--danger); font-weight: 700; }
+
+.rules-note { font-size: 13.5px; color: var(--muted); font-style: italic; }
+.rules-footer { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin: 32px 0 24px; }
+
+.hero-badge {
+  display: inline-block;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(127, 214, 176, .28);
+  background: rgba(127, 214, 176, .08);
+  color: var(--primary);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+/* ---------- адаптив ---------- */
+
+@media (max-width: 600px) {
+  .patient-page, .rules-page { padding: 16px; }
+  .patient-card { padding: 22px 16px; }
+  .diag-grid { grid-template-columns: 1fr; }
+  .vitals { grid-template-columns: repeat(2, 1fr); }
+  .rules-nav { flex-direction: column; align-items: stretch; }
+  .rules-nav .btn { justify-content: center; }
+  .rules-block { padding: 20px; }
+  .rules-footer .btn { width: 100%; justify-content: center; }
+}

@@ -1,5 +1,30 @@
 <?php
-// patient.php — карточка пациента. Позже данные придут из MySQL (Мидл-2).
+// patient.php — карточка пациента.
+// Принимает ник из главного меню: patient.php?nick=...&resume=1
+// Если по нику есть сохранение — показывает, с какого пациента продолжать.
+require_once __DIR__ . '/includes/bootstrap.php';
+
+// ник пришёл с главной — запоминаем и работаем от него
+$nick = current_nickname();
+if ($nick !== null) {
+    remember_nickname($nick);
+}
+
+$resume = isset($_GET['resume']) && $_GET['resume'] === '1';
+$saved  = null;
+if ($nick !== null) {
+    $player = db_find_player($nick);
+    if ($player) {
+        $saved = db_load_save((int) $player['player_id']);
+    }
+}
+
+// Сохранение важнее параметра id: продолжаем с того же пациента
+$resumeId = null;
+if ($saved && isset($saved['state']['patientIndex'])) {
+    $resumeId = (int) $saved['state']['patientIndex'] + 1;
+}
+
 function getAllPatients(): array {
     return [
         1 => [
@@ -54,7 +79,11 @@ function getPatient(?int $id): array {
 }
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
+if ($id === null && $resumeId !== null) {
+    $id = $resumeId; // продолжаем смену с сохранённого пациента
+}
 $patient = getPatient($id);
+$nickParam = $nick !== null ? 'nick=' . urlencode($nick) : '';
 ?>
 <!DOCTYPE html>
 <html lang="ru">
@@ -62,16 +91,32 @@ $patient = getPatient($id);
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Карточка пациента — Смена 03</title>
-  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 
 <main class="patient-page">
 
   <nav class="rules-nav">
-    <a href="index.php" class="btn btn-ghost">← На главную</a>
+    <a href="index.php" class="btn btn-ghost">← В меню</a>
+    <span class="player-tag">
+      <?php if ($nick !== null): ?>
+        Смена игрока <b><?= e($nick) ?></b>
+      <?php else: ?>
+        Гостевой режим
+      <?php endif; ?>
+    </span>
     <a href="rules.php" class="btn btn-ghost">📖 Правила</a>
   </nav>
+
+  <?php if ($resume && $saved): ?>
+    <div class="player-tag player-tag--wide">
+      Продолжаем сохранённую смену: <b><?= num_ru((int)($saved['state']['score'] ?? 0)) ?></b> очков ·
+      репутация <b><?= (int)($saved['state']['reputation'] ?? 100) ?></b> ·
+      пауза с <?= e(fmt_shift_date($saved['saved_at'])) ?>
+    </div>
+  <?php endif; ?>
 
   <section class="patient-card">
 
@@ -103,7 +148,8 @@ $patient = getPatient($id);
 
     <!-- ПЕРЕЛИНКОВКА: кнопка «Начать лечение» → diagnosis.php?id=... -->
     <div class="patient-actions">
-      <a href="diagnosis.php?id=<?= (int)$patient['id'] ?>" class="btn btn-primary btn-lg">
+      <a href="diagnosis.php?id=<?= (int)$patient['id'] ?><?= $nickParam !== '' ? '&' . e($nickParam) : '' ?>"
+         class="btn btn-primary btn-lg">
         💊 Начать лечение
       </a>
     </div>

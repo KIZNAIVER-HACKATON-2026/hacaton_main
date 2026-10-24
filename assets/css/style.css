@@ -162,3 +162,32 @@
   .patient-card { padding: 20px 16px; }
   .diag-grid { grid-template-columns: 1fr; }
 }
+/* ---------- Плашка игрока на страницах игры ---------- */
+.player-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid rgba(127, 214, 176, .22);
+  border-radius: 999px;
+  background: rgba(9, 14, 19, .55);
+  font-size: 12.5px;
+  color: #8aa19a;
+}
+.player-tag b { color: #e8f0ea; font-weight: 700; }
+.player-tag--wide {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  margin: 0 0 18px;
+  border-radius: 12px;
+  border-color: rgba(240, 169, 92, .26);
+  background: rgba(240, 169, 92, .07);
+  color: #b9c9c3;
+}
+.player-tag--wide b { color: #f0a95c; }
+
+@media (max-width: 600px) {
+  .rules-nav .player-tag { display: none; }
+  .player-tag--wide { font-size: 11.5px; text-align: center; }
+}

@@ -29,6 +29,7 @@
     mistakes: 0,            // всего ошибок
     diagnoses: 0,           // верных диагнозов
     treatSeq: [],           // выбранные шаги лечения
+    treatOrder: [],         // случайное расположение вариантов лечения для текущего пациента
     treatBusy: false,
     callQueue: CALLS.slice(),
     paused: false,
@@ -68,6 +69,19 @@
       var t = a[i]; a[i] = a[j]; a[j] = t;
     }
     return a;
+  }
+
+  function randomTreatmentOrder(length) {
+    var natural = [];
+    for (var i = 0; i < length; i++) natural.push(i);
+    var order = natural;
+    for (var attempt = 0; attempt < 12; attempt++) {
+      order = shuffle(natural);
+      if (length < 2 || !order.every(function (value, index) { return value === index; })) return order;
+    }
+    // Даже при крайне маловероятном повторении исходной очереди не показываем её игроку.
+    var offset = 1 + Math.floor(Math.random() * (length - 1));
+    return natural.slice(offset).concat(natural.slice(0, offset));
   }
 
   /* ---------------- HUD ---------------- */
@@ -278,13 +292,18 @@
     if (statusEl) statusEl.textContent = 'Лечение';
 
     S.treatSeq = [];
+    S.treatOrder = randomTreatmentOrder(p.treatment.length);
     paintTreatment(p);
   }
 
   function paintTreatment(p) {
     var seq = S.treatSeq;
+    var choices = S.treatOrder.length === p.treatment.length
+      ? S.treatOrder
+      : p.treatment.map(function (_, index) { return index; });
 
-    el.treatPool.innerHTML = p.treatment.map(function (action, i) {
+    el.treatPool.innerHTML = choices.map(function (i) {
+      var action = p.treatment[i];
       var used = seq.indexOf(i) !== -1;
       return '<button class="treat-btn' + (used ? ' is-used' : '') + '" type="button" data-i="' + i + '"' +
              (used ? ' disabled' : '') + '>' + esc(action) + '</button>';

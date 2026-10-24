@@ -1,0 +1,1787 @@
+From 76e20e5f4a7632d5d5a0a7bb12750bdd6918e5a1 Mon Sep 17 00:00:00 2001
+From: Arena Agent <agent@arena.ai>
+Date: Sat, 24 Oct 2026 18:57:58 +0000
+Subject: [PATCH 1/2] =?UTF-8?q?=D0=9E=D0=BF=D0=B5=D1=80=D0=B0=D1=86=D0=B8?=
+ =?UTF-8?q?=D1=8F:=20=D0=BF=D0=B5=D1=80=D0=B5=D1=82=D0=B0=D1=81=D0=BA?=
+ =?UTF-8?q?=D0=B8=D0=B2=D0=B0=D0=BD=D0=B8=D0=B5=20=D0=B8=D0=BD=D1=81=D1=82?=
+ =?UTF-8?q?=D1=80=D1=83=D0=BC=D0=B5=D0=BD=D1=82=D0=BE=D0=B2=20=D1=81=D0=BE?=
+ =?UTF-8?q?=20=D1=81=D1=82=D0=BE=D0=BB=D0=B0=20=D0=BA=20=D0=BF=D0=B0=D1=86?=
+ =?UTF-8?q?=D0=B8=D0=B5=D0=BD=D1=82=D1=83=20(8=20=D0=BF=D1=80=D0=B5=D0=B4?=
+ =?UTF-8?q?=D0=BC=D0=B5=D1=82=D0=BE=D0=B2,=205=20=D0=B2=D0=B5=D1=80=D0=BD?=
+ =?UTF-8?q?=D1=8B=D1=85=20=D0=BF=D0=BE=20=D0=BF=D0=BE=D1=80=D1=8F=D0=B4?=
+ =?UTF-8?q?=D0=BA=D1=83)?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ assets/css/operation-dnd.css     | 225 ++++++++++++++
+ assets/js/cabinet.js             |   2 +-
+ assets/js/operation.js           | 501 +++++++++++++++++++++++++------
+ includes/operation_scenarios.php | 252 +++++++++-------
+ operation.php                    |  40 ++-
+ 5 files changed, 816 insertions(+), 204 deletions(-)
+ create mode 100644 assets/css/operation-dnd.css
+
+diff --git a/assets/css/operation-dnd.css b/assets/css/operation-dnd.css
+new file mode 100644
+index 0000000..827ceeb
+--- /dev/null
++++ b/assets/css/operation-dnd.css
+@@ -0,0 +1,225 @@
++/* Учебная операция: drag & drop инструментов. Подключается после operation-pixel.css. */
++
++.op-board--dnd {
++  grid-template-columns: minmax(300px, .85fr) 1.15fr;
++  min-height: 560px;
++}
++.op-board--dnd .op-patient { display: flex; flex-direction: column; gap: 10px; padding: 18px; }
++.op-board--dnd .op-work { padding: clamp(18px, 3vw, 32px); }
++.op-board--dnd .op-work h2 { margin: 14px 0 6px; font-size: clamp(24px, 3.2vw, 34px); }
++.op-board--dnd .op-feedback {
++  min-height: 46px;
++  margin: 12px 0 14px !important;
++  padding: 10px 12px !important;
++  border: 2px solid #142a2b;
++  background: #081215;
++  box-shadow: 2px 2px 0 #000;
++  line-height: 1.45;
++}
++.op-feedback.is-info { color: #afc2b9 !important; }
++.op-feedback.is-good { border-color: #3b8a6b !important; background: #0d2620 !important; }
++.op-feedback.is-bad  { border-color: #a4473d !important; background: #2a1414 !important; }
++.op-feedback.is-warn { border-color: #b07a3a !important; background: #2a1f10 !important; color: #f3c487 !important; }
++
++/* ---------- Пациент / зона сброса ---------- */
++.op-dropzone {
++  position: relative;
++  border: 3px solid #23473f;
++  background: #0e1d21;
++  box-shadow: 3px 3px 0 #000;
++  transition: border-color .15s, box-shadow .15s;
++  user-select: none;
++}
++.op-dropzone__scene { display: block; line-height: 0; }
++.patient-svg { display: block; width: 100%; height: auto; max-height: 380px; image-rendering: pixelated; }
++.op-dropzone__hint {
++  position: absolute;
++  left: 8px; right: 8px; bottom: 8px;
++  padding: 5px 8px;
++  border: 2px solid #050b0d;
++  background: rgba(5, 11, 13, .82);
++  color: #afc2b9;
++  font-size: 12px;
++  text-align: center;
++  pointer-events: none;
++}
++.patient-target { animation: op-target 1.2s steps(2) infinite; }
++@keyframes op-target { 50% { opacity: .25; } }
++.patient-layer { opacity: 0; transition: opacity .4s; }
++.patient-layer.is-on { opacity: 1; }
++
++body.is-dragging-tool .op-dropzone { border-color: #f0a95c; box-shadow: 3px 3px 0 #000, 0 0 0 3px rgba(240, 169, 92, .25); }
++body.is-dragging-tool .op-dropzone__hint { color: #f0a95c; }
++.op-dropzone.is-over { border-color: #7fd6b0 !important; box-shadow: 3px 3px 0 #000, 0 0 0 4px rgba(127, 214, 176, .45) !important; }
++.op-dropzone.is-over .op-dropzone__hint { color: #7fd6b0; }
++.op-dropzone.is-accepted { border-color: #7fd6b0; box-shadow: 3px 3px 0 #000, 0 0 22px rgba(127, 214, 176, .55); }
++.op-dropzone.is-rejected { border-color: #e2685a !important; animation: op-shake .35s steps(4); }
++.op-dropzone.is-complete { border-color: #7fd6b0; }
++.op-dropzone.is-complete .patient-target,
++.op-dropzone.is-stopped .patient-target { display: none; }
++.op-dropzone.is-stopped { border-color: #a4473d; }
++
++/* ---------- Монитор показателей ---------- */
++.op-vitals {
++  display: flex; align-items: center; gap: 8px;
++  padding: 6px 10px;
++  border: 2px solid #142a2b;
++  background: #050d0f;
++  box-shadow: 2px 2px 0 #000;
++  color: #7fd6b0;
++  font-size: 13px;
++}
++.op-vitals b { font-size: 16px; color: #d6efe4; }
++.op-vitals small { color: #60746d; font-size: 11px; }
++.op-vitals__heart { color: #e2685a; animation: op-beat 1s steps(2) infinite; }
++.op-vitals__ecg { flex: 1; height: 22px; min-width: 40px; }
++.op-vitals__ecg polyline { fill: none; stroke: #7fd6b0; stroke-width: 2; stroke-dasharray: 260; stroke-dashoffset: 260; animation: op-ecg 1.6s linear infinite; }
++.op-vitals.is-alert { border-color: #b07a3a; color: #f0a95c; }
++.op-vitals.is-alert b { color: #f0a95c; }
++.op-vitals.is-alert polyline { stroke: #f0a95c; animation-duration: .8s; }
++.op-vitals.is-alert .op-vitals__heart { animation-duration: .45s; }
++@keyframes op-beat { 50% { opacity: .35; } }
++@keyframes op-ecg { to { stroke-dashoffset: 0; } }
++
++/* ---------- Порядок действий ---------- */
++.op-board--dnd .op-checklist { margin-top: 0; gap: 5px; }
++.op-seq__title { color: #60746d; font-size: 11px; text-transform: uppercase; letter-spacing: .1em; }
++.op-board--dnd .op-check { gap: 8px; min-height: 30px; }
++.op-board--dnd .op-check > span { flex: 1; display: flex; flex-direction: column; line-height: 1.25; }
++.op-board--dnd .op-check small { color: #60746d; font-size: 11px; }
++.op-check__tool {
++  display: grid; place-items: center;
++  width: 44px; height: 28px;
++  border: 2px solid #142a2b;
++  background: #081215;
++  font-style: normal; color: #3a5550; font-size: 12px;
++}
++.op-check__tool .tool-svg { width: 38px; height: 24px; }
++.op-check.is-done .op-check__tool { border-color: #3b8a6b; }
++
++/* ---------- Инструментальный стол ---------- */
++.op-table {
++  margin-top: auto;
++  padding: 12px;
++  border: 3px solid #050b0d;
++  background:
++    repeating-linear-gradient(90deg, rgba(255,255,255,.03) 0 2px, transparent 2px 8px),
++    linear-gradient(180deg, #2e6f86, #255d71);
++  box-shadow: inset 0 0 0 3px #3f88a1, 4px 4px 0 #000;
++}
++.op-table__head {
++  display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
++  margin: 0 0 10px;
++  color: #e8f0ea; font-size: 14px; text-transform: uppercase; letter-spacing: .08em;
++}
++.op-table__head small { color: #bfe3ee; font-size: 12px; text-transform: none; letter-spacing: 0; }
++.op-table__tip { margin: 10px 0 0; color: #cfe9f1; font-size: 12px; line-height: 1.4; }
++
++.op-tray {
++  display: grid;
++  grid-template-columns: repeat(4, minmax(0, 1fr));
++  gap: 10px;
++}
++.tray-slot { display: flex; flex-direction: column; align-items: stretch; gap: 5px; min-width: 0; }
++.tray-slot__place {
++  position: relative;
++  aspect-ratio: 8 / 5;
++  border: 2px dashed rgba(220, 240, 246, .45);
++  background: rgba(10, 30, 38, .35);
++}
++.tray-slot__ghost {
++  position: absolute; inset: 10%;
++  width: 80%; height: 80%;
++  opacity: 0; filter: grayscale(1) brightness(2);
++  transition: opacity .15s;
++  pointer-events: none;
++}
++.tray-slot.is-lifted .tray-slot__ghost,
++.tray-slot.is-used .tray-slot__ghost { opacity: .18; }
++.tray-slot.is-used .tray-slot__ghost { inset: 4% 12% 28%; width: 76%; height: 68%; }
++.tray-slot__num {
++  position: absolute; top: 2px; left: 4px;
++  color: rgba(220, 240, 246, .55); font-size: 10px; pointer-events: none;
++}
++.tray-slot__label {
++  min-height: 2.5em;
++  padding: 3px 4px;
++  border: 2px solid #050b0d;
++  background: #f1ead6;
++  color: #1a2a2c;
++  font-size: 12px; line-height: 1.15; text-align: center;
++  box-shadow: 2px 2px 0 rgba(0, 0, 0, .55);
++  overflow-wrap: anywhere;
++}
++
++.tool {
++  position: absolute; inset: 0;
++  display: grid; place-items: center;
++  width: 100%; height: 100%;
++  margin: 0; padding: 6%;
++  border: 0; background: none;
++  cursor: grab;
++  touch-action: none;
++  user-select: none; -webkit-user-select: none;
++  -webkit-tap-highlight-color: transparent;
++  z-index: 2;
++  transition: transform .14s;
++}
++.tool .tool-svg { width: 100%; height: 100%; filter: drop-shadow(3px 3px 0 rgba(0,0,0,.55)); pointer-events: none; }
++.tool:hover:not(:disabled) { transform: translateY(-3px); }
++.tool:focus-visible { outline: 3px solid #f0a95c; outline-offset: -3px; }
++.tool.is-grabbed { cursor: grabbing; z-index: 60; transition: none; }
++.tool.is-grabbed .tool-svg { filter: drop-shadow(8px 10px 0 rgba(0,0,0,.45)); }
++.tool.is-returning { z-index: 50; transition: transform .38s cubic-bezier(.3, 1.4, .5, 1); }
++.tool.is-rejected .tool-svg { animation: op-shake .35s steps(4) .3s; }
++.tool.is-applied { z-index: 60; transition: transform .45s ease-in, opacity .45s ease-in; opacity: 0; pointer-events: none; }
++.tool:disabled { visibility: hidden; }
++
++.tray-slot.is-used .tray-slot__place { border-style: solid; border-color: rgba(127, 214, 176, .7); background: rgba(13, 38, 32, .55); }
++.tray-slot.is-used .tray-slot__place::after {
++  content: '✓ использован';
++  position: absolute; inset: auto 0 4px 0;
++  color: #7fd6b0; font-size: 11px; text-align: center;
++}
++.tray-slot.is-used .tray-slot__label { background: #b9d8c8; color: #355447; text-decoration: line-through; }
++.tray-slot.is-hint .tray-slot__place { border-color: #f0a95c; border-style: solid; animation: op-hint 0.8s steps(2) infinite; }
++@keyframes op-hint { 50% { background: rgba(240, 169, 92, .35); } }
++@keyframes op-shake { 25% { translate: -4px 0; } 50% { translate: 4px 0; } 75% { translate: -3px 0; } }
++
++body.is-dragging-tool, body.is-dragging-tool * { cursor: grabbing !important; }
++
++@media (max-width: 980px) {
++  .op-tray { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
++  .tray-slot__label { font-size: 11px; }
++}
++@media (max-width: 760px) {
++  /* На телефоне пациент стоит прямо над столом — тянуть предмет без скролла */
++  .op-board--dnd { grid-template-columns: 1fr; gap: 10px; padding: 16px 14px; min-height: 0; }
++  .op-board--dnd .op-patient,
++  .op-board--dnd .op-work { display: contents; }
++  .op-board--dnd .op-step { order: 1; }
++  .op-board--dnd .op-work h2 { order: 2; margin: 0; font-size: 24px; }
++  .op-board--dnd #op-description { order: 3; }
++  .op-board--dnd .op-feedback { order: 4; margin: 0 !important; min-height: 0; }
++  .op-board--dnd .op-patient__label { order: 5; }
++  .op-board--dnd .op-dropzone { order: 6; }
++  .op-board--dnd .op-table { order: 7; margin-top: 0; }
++  .op-board--dnd .op-vitals { order: 8; }
++  .op-board--dnd .op-patient__note { order: 9; min-height: 0; }
++  .op-board--dnd .op-checklist { order: 10; }
++  .patient-svg { max-height: 250px; margin: 0 auto; }
++  .op-dropzone__hint { font-size: 11px; padding: 3px 6px; }
++  .op-table__tip { display: none; }
++}
++@media (max-width: 480px) {
++  .op-tray { gap: 5px; }
++  .op-table { padding: 8px; }
++  .op-table__head { font-size: 12px; }
++  .op-table__head small { display: none; }
++  .tray-slot__label { font-size: 10px; min-height: 3.4em; padding: 2px; }
++  .tray-slot__num { display: none; }
++  .tray-slot.is-used .tray-slot__place::after { content: '✓'; font-size: 14px; }
++}
++@media (prefers-reduced-motion: reduce) {
++  .patient-target, .op-vitals__heart, .op-vitals__ecg polyline, .tray-slot.is-hint .tray-slot__place { animation: none; }
++}
+diff --git a/assets/js/cabinet.js b/assets/js/cabinet.js
+index 5ebb554..e11ce9a 100644
+--- a/assets/js/cabinet.js
++++ b/assets/js/cabinet.js
+@@ -87,7 +87,7 @@
+         '<div class="cabinet-panel cabinet-games"><div class="cabinet-panel__head"><div><p>Игровые режимы</p><h3>Выбери задание</h3></div></div>' +
+           '<div class="game-mode-grid">' +
+             '<a class="game-mode" href="game.php?nick=' + encodeURIComponent(nick) + '"><span class="game-mode__icon">' + pixelIcon('ambulance') + '</span><span><b>Ночная смена</b><small>12 пациентов · диагноз и порядок лечения</small></span><i>Играть →</i></a>' +
+-            '<a class="game-mode game-mode--operation" href="operation.php?nick=' + encodeURIComponent(nick) + '"><span class="game-mode__icon">' + pixelIcon('bandage') + '</span><span><b>Учебная операция</b><small>4 операции · случайный выбор игрой · без графических сцен</small></span><i>Оперировать →</i></a>' +
++            '<a class="game-mode game-mode--operation" href="operation.php?nick=' + encodeURIComponent(nick) + '"><span class="game-mode__icon">' + pixelIcon('bandage') + '</span><span><b>Учебная операция</b><small>4 операции · подай инструменты в нужном порядке</small></span><i>Оперировать →</i></a>' +
+           '</div>' +
+           '<div class="daily-mission ' + progress + '"><span>Миссия дня</span><b>' + esc(modeGoal) + '</b><small>' + (p.operations_success > 0 ? 'Выполнено: опыт и бюджет уже начислены.' : 'Успех даст +90 ₽ и +50 XP. Ошибки не сбрасывают прогресс.') + '</small></div>' +
+         '</div>' +
+diff --git a/assets/js/operation.js b/assets/js/operation.js
+index 414636a..da782fe 100644
+--- a/assets/js/operation.js
++++ b/assets/js/operation.js
+@@ -1,4 +1,14 @@
+-/* Случайно назначенный учебный сценарий операции, схемы и запись результата. */
++/* Учебная операция: перетаскивание инструментов со стола к пациенту в правильном порядке.
++ *
++ * Механика:
++ *  - справа инструментальный стол: 8 подписанных предметов на своих местах (слотах);
++ *  - слева пациент (схематично, укрыт простынёй) — зона сброса;
++ *  - нужно 5 правильных инструментов строго по порядку этапов;
++ *  - отпустил предмет мимо пациента / просто кликнул — предмет плавно возвращается на место;
++ *  - неверный инструмент или не тот порядок — штраф, предмет возвращается на место;
++ *  - верный — предмет «уходит» к пациенту, слот на столе помечается как использованный.
++ * Работает мышью, пальцем (Pointer Events) и с клавиатуры (Tab + Enter).
++ */
+ (function () {
+   'use strict';
+   var DATA = window.OPERATION || {};
+@@ -6,102 +16,411 @@
+ 
+   var scenario = DATA.scenario || {};
+   var steps = Array.isArray(scenario.steps) ? scenario.steps : [];
++  var tools = Array.isArray(scenario.tools) ? scenario.tools : [];
++  var requiredIds = steps.map(function (s) { return s.tool; });
++
++  var RULES = {
++    time: 180,
++    correct: 100, cleanBonus: 20,          // +очки за верный шаг и бонус, если без ошибок на этом шаге
++    wrongTool: { score: 30, rep: 15, time: 8 },  // инструмент, которого нет в операции
++    wrongOrder: { score: 10, rep: 5, time: 3 },  // нужный инструмент, но не сейчас
++    hintAfter: 2,                          // после N ошибок на шаге подсвечиваем верный предмет
++    dragThreshold: 4                       // px — меньше считается кликом
++  };
++
++  var state = {
++    index: 0, score: 0, rep: 100, mistakes: 0, stepMistakes: 0, attempts: 0,
++    remaining: RULES.time, finished: false, started: false, busy: false, timer: null, token: uuid(),
++    used: {}, hr: 72, hrTimer: null
++  };
+ 
+-  var state = { index: 0, score: 0, rep: 100, mistakes: 0, remaining: 180, finished: false, timer: null, token: uuid() };
+   var el = {
+-    time: document.getElementById('op-time'), score: document.getElementById('op-score'), rep: document.getElementById('op-rep'),
+-    stepNumber: document.getElementById('op-step-number'), question: document.getElementById('op-question'), description: document.getElementById('op-description'),
+-    actions: document.getElementById('op-actions'), feedback: document.getElementById('op-feedback'), checklist: document.getElementById('op-checklist'),
+-    scene: document.getElementById('arm-scene'), note: document.getElementById('visual-note'),
+-    final: document.getElementById('op-final'), finalLabel: document.getElementById('op-final-label'), finalTitle: document.getElementById('op-final-title'), finalText: document.getElementById('op-final-text'), finalScore: document.getElementById('op-final-score'), finalAccuracy: document.getElementById('op-final-accuracy'), finalReward: document.getElementById('op-final-reward'), finalSave: document.getElementById('op-final-save')
++    time: byId('op-time'), score: byId('op-score'), rep: byId('op-rep'),
++    stepNumber: byId('op-step-number'), question: byId('op-question'), description: byId('op-description'),
++    feedback: byId('op-feedback'), checklist: byId('op-checklist'), note: byId('visual-note'),
++    scene: byId('arm-scene'), drop: byId('op-dropzone'), dropHint: byId('op-drop-hint'), tray: byId('op-tray'),
++    hr: byId('op-hr'), vitals: byId('op-vitals'), tableCount: byId('op-table-count'),
++    final: byId('op-final'), finalLabel: byId('op-final-label'), finalTitle: byId('op-final-title'), finalText: byId('op-final-text'),
++    finalScore: byId('op-final-score'), finalAccuracy: byId('op-final-accuracy'), finalReward: byId('op-final-reward'), finalSave: byId('op-final-save')
+   };
+ 
+-  var sceneTemplates = {
+-    appendectomy: '<svg class="op-scene__svg" viewBox="0 0 320 200" role="img" aria-label="Схема лапароскопического тренажёра"><rect width="320" height="200" rx="14" fill="#102126"/><rect x="112" y="27" width="96" height="145" rx="38" fill="#d8c1b0" stroke="#8c786b" stroke-width="4"/><path d="M129 54h62v74h-62z" fill="#c5b2a3"/><circle cx="145" cy="91" r="10" fill="#78c7a0"/><circle cx="175" cy="91" r="10" fill="#78c7a0"/><circle cx="160" cy="119" r="10" fill="#78c7a0"/><path d="M48 58h42v52H48z" fill="#254b50" stroke="#7fd6b0" stroke-width="3"/><path d="M58 74h22m-22 11h22m-22 11h14" stroke="#d6efe4" stroke-width="4"/></svg>',
+-    osteosynthesis: '<svg class="op-scene__svg" viewBox="0 0 320 200" role="img" aria-label="Схема внешней фиксации на манекене"><rect width="320" height="200" rx="14" fill="#102126"/><rect x="36" y="83" width="246" height="48" rx="24" fill="#d8c1b0" stroke="#8c786b" stroke-width="4"/><rect x="90" y="70" width="151" height="75" rx="19" fill="#81969a" stroke="#dce6e3" stroke-width="4"/><path d="M112 107h106" stroke="#d7e5e2" stroke-width="10" stroke-linecap="round"/><circle cx="126" cy="91" r="5" fill="#f0a95c"/><circle cx="205" cy="91" r="5" fill="#f0a95c"/><circle cx="126" cy="124" r="5" fill="#f0a95c"/><circle cx="205" cy="124" r="5" fill="#f0a95c"/><rect x="251" y="88" width="38" height="36" rx="13" fill="#d8c1b0" stroke="#8c786b" stroke-width="4"/></svg>',
+-    cholecystectomy: '<svg class="op-scene__svg" viewBox="0 0 320 200" role="img" aria-label="Абстрактная схема лапароскопической операционной"><rect width="320" height="200" rx="14" fill="#102126"/><rect x="113" y="27" width="94" height="145" rx="37" fill="#d8c1b0" stroke="#8c786b" stroke-width="4"/><rect x="126" y="60" width="68" height="76" rx="18" fill="#96b8ae"/><circle cx="139" cy="80" r="8" fill="#f0a95c"/><circle cx="181" cy="80" r="8" fill="#f0a95c"/><circle cx="160" cy="116" r="8" fill="#f0a95c"/><path d="M45 58h47v56H45z" fill="#254b50" stroke="#7fd6b0" stroke-width="3"/><path d="M54 72h29m-29 12h29m-29 12h21" stroke="#d6efe4" stroke-width="4"/><path d="M92 85h25m90 0h24" stroke="#7fd6b0" stroke-width="3" stroke-dasharray="5 5"/></svg>',
+-    cesarean: '<svg class="op-scene__svg" viewBox="0 0 320 200" role="img" aria-label="Схема операционной и пеленального места"><rect width="320" height="200" rx="14" fill="#102126"/><rect x="55" y="45" width="174" height="108" rx="19" fill="#d8c1b0" stroke="#8c786b" stroke-width="4"/><path d="M65 91h154v52H65z" fill="#6e9eaa"/><path d="M81 105h122v30H81z" fill="#8bb8c0"/><rect x="235" y="87" width="53" height="55" rx="8" fill="#d5e7e3" stroke="#7fd6b0" stroke-width="3"/><rect x="243" y="99" width="37" height="29" rx="11" fill="#f0e3d5"/><path d="M251 113h20m-10-10v20" stroke="#7fd6b0" stroke-width="3"/><circle cx="75" cy="59" r="7" fill="#f0a95c"/><circle cx="208" cy="59" r="7" fill="#f0a95c"/></svg>'
++  function byId(id) { return document.getElementById(id); }
++  function esc(v) { return String(v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
++
++  /* ---------- Пиксельные иконки инструментов (viewBox 64x40) ---------- */
++  var O = 'stroke="#050b0d" stroke-width="2"';
++  var TOOL_ICONS = {
++    antiseptic: '<rect x="27" y="3" width="10" height="7" fill="#e8f0ea" ' + O + '/><rect x="24" y="10" width="16" height="4" fill="#cfd9dc" ' + O + '/><rect x="21" y="14" width="22" height="23" fill="#b8612f" ' + O + '/><rect x="24" y="19" width="16" height="11" fill="#e8f0ea"/><rect x="30" y="20" width="4" height="9" fill="#e2685a"/><rect x="27" y="23" width="10" height="3" fill="#e2685a"/>',
++    scalpel: '<rect x="3" y="18" width="32" height="6" fill="#8fa3a8" ' + O + '/><rect x="7" y="20" width="22" height="2" fill="#b9c9cd"/><polygon points="35,15 50,14 61,20 35,25" fill="#e6eef0" ' + O + '/><rect x="37" y="18" width="16" height="2" fill="#ffffff"/>',
++    trocar: '<rect x="4" y="11" width="16" height="18" fill="#3d7f9c" ' + O + '/><rect x="8" y="5" width="6" height="6" fill="#f0a95c" ' + O + '/><rect x="20" y="16" width="32" height="8" fill="#c9d6da" ' + O + '/><polygon points="52,16 62,20 52,24" fill="#e6eef0" ' + O + '/><rect x="23" y="18" width="26" height="2" fill="#ffffff"/>',
++    laparoscope: '<rect x="2" y="17" width="6" height="6" fill="#1d2a30"/><rect x="7" y="11" width="14" height="18" fill="#2f4650" ' + O + '/><rect x="10" y="14" width="4" height="4" fill="#7fd6b0"/><rect x="21" y="17" width="36" height="6" fill="#c9d6da" ' + O + '/><rect x="57" y="16" width="5" height="8" fill="#7fd6b0" ' + O + '/><rect x="24" y="19" width="30" height="1" fill="#ffffff"/>',
++    clip_applier: '<rect x="3" y="5" width="11" height="11" fill="none" ' + O.replace('2"', '3"') + '/><rect x="3" y="24" width="11" height="11" fill="none" ' + O.replace('2"', '3"') + '/><rect x="4" y="6" width="9" height="9" fill="none" stroke="#c9d6da" stroke-width="2"/><rect x="4" y="25" width="9" height="9" fill="none" stroke="#c9d6da" stroke-width="2"/><rect x="13" y="14" width="8" height="12" fill="#9fb3b8" ' + O + '/><rect x="21" y="17" width="34" height="6" fill="#c9d6da" ' + O + '/><polygon points="55,15 62,17 62,23 55,25" fill="#9fb3b8" ' + O + '/><rect x="58" y="19" width="5" height="2" fill="#f0c94a"/>',
++    needle_holder: '<rect x="3" y="5" width="11" height="11" fill="none" stroke="#c9d6da" stroke-width="3"/><rect x="3" y="24" width="11" height="11" fill="none" stroke="#c9d6da" stroke-width="3"/><polygon points="13,13 40,19 40,21 13,16" fill="#b9c9cd" ' + O + '/><polygon points="13,27 40,21 40,19 13,24" fill="#9fb3b8" ' + O + '/><rect x="40" y="18" width="10" height="4" fill="#c9d6da" ' + O + '/><path d="M50 20 q7 -12 12 -2" fill="none" stroke="#e6eef0" stroke-width="2"/><path d="M62 18 q-4 14 -18 14 q-8 0 -10 4" fill="none" stroke="#5aa0e0" stroke-width="2"/>',
++    endobag: '<rect x="3" y="18" width="24" height="4" fill="#c9d6da" ' + O + '/><path d="M27 12 h10 l14 2 q10 6 0 12 l-14 2 h-10 z" fill="#8fd8c0" fill-opacity=".75" ' + O + '/><rect x="29" y="14" width="3" height="12" fill="#e8f0ea"/><rect x="36" y="17" width="12" height="2" fill="#e8f0ea" fill-opacity=".7"/>',
++    retractor: '<path d="M8 6 h8 v22 h32 v-22 h8" fill="none" stroke="#050b0d" stroke-width="8"/><path d="M8 6 h8 v22 h32 v-22 h8" fill="none" stroke="#c9d6da" stroke-width="4"/><rect x="28" y="28" width="8" height="10" fill="#8fa3a8" ' + O + '/>',
++    cord_clamp: '<rect x="8" y="12" width="40" height="7" fill="#f0a95c" ' + O + '/><rect x="8" y="21" width="40" height="7" fill="#e0913f" ' + O + '/><rect x="48" y="12" width="8" height="16" fill="#f0a95c" ' + O + '/><rect x="12" y="18" width="3" height="4" fill="#fff4dc"/><rect x="19" y="18" width="3" height="4" fill="#fff4dc"/><rect x="26" y="18" width="3" height="4" fill="#fff4dc"/><rect x="33" y="18" width="3" height="4" fill="#fff4dc"/><rect x="4" y="15" width="5" height="10" fill="#e0913f" ' + O + '/>',
++    plate: '<rect x="4" y="13" width="56" height="14" fill="#aab8bd" ' + O + '/><rect x="6" y="15" width="52" height="2" fill="#d6e1e4"/><rect x="10" y="17" width="6" height="6" fill="#33454c"/><rect x="22" y="17" width="6" height="6" fill="#33454c"/><rect x="36" y="17" width="6" height="6" fill="#33454c"/><rect x="48" y="17" width="6" height="6" fill="#33454c"/><rect x="8" y="31" width="4" height="7" fill="#d6e1e4" ' + O + '/><rect x="16" y="31" width="4" height="7" fill="#d6e1e4" ' + O + '/>',
++    drill: '<rect x="8" y="8" width="30" height="13" fill="#4f8a7a" ' + O + '/><rect x="16" y="21" width="11" height="16" fill="#3a6a5d" ' + O + '/><rect x="27" y="22" width="4" height="6" fill="#f0a95c"/><rect x="38" y="11" width="7" height="7" fill="#8fa3a8" ' + O + '/><rect x="45" y="13" width="16" height="3" fill="#d6e1e4" ' + O + '/><rect x="11" y="11" width="10" height="3" fill="#7fd6b0"/>',
++    saw: '<rect x="3" y="14" width="24" height="12" fill="#6a6f8a" ' + O + '/><rect x="6" y="17" width="10" height="3" fill="#a3a8c4"/><rect x="27" y="16" width="10" height="8" fill="#8fa3a8" ' + O + '/><polygon points="37,13 61,13 61,27 37,27" fill="#d6e1e4" ' + O + '/><path d="M37 27 l3 4 l3 -4 l3 4 l3 -4 l3 4 l3 -4 l3 4 l3 -4" fill="#d6e1e4" stroke="#050b0d" stroke-width="1.5"/>',
++    mallet: '<rect x="4" y="17" width="34" height="6" fill="#a07850" ' + O + '/><rect x="8" y="19" width="22" height="1" fill="#c79a6c"/><rect x="38" y="7" width="20" height="26" fill="#8a9ba0" ' + O + '/><rect x="41" y="10" width="4" height="20" fill="#c3d0d4"/>'
+   };
++  function toolSvg(icon, extraClass) {
++    return '<svg class="tool-svg ' + (extraClass || '') + '" viewBox="0 0 64 40" aria-hidden="true">' + (TOOL_ICONS[icon] || TOOL_ICONS.scalpel) + '</svg>';
++  }
++  function toolById(id) { for (var i = 0; i < tools.length; i++) if (tools[i].id === id) return tools[i]; return null; }
++
++  /* ---------- Схема пациента (неграфическая, сверху) ---------- */
++  var FIELDS = {
++    appendectomy:    { x: 84,  y: 172, w: 56, h: 40 },
++    cholecystectomy: { x: 82,  y: 118, w: 62, h: 42 },
++    cesarean:        { x: 90,  y: 190, w: 60, h: 32 },
++    osteosynthesis:  { x: 190, y: 100, w: 42, h: 20, arm: true }
++  };
++  var visual = FIELDS[scenario.visual] ? scenario.visual : 'appendectomy';
++  var F = FIELDS[visual];
++
++  function r(x, y, w, h, fill, extra) { return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="' + fill + '" ' + (extra || '') + '/>'; }
++
++  function layerMarkup() {
++    var cx = F.x + F.w / 2, cy = F.y + F.h / 2, L = {};
++    // Антисептик — лёгкий йодный оттенок зоны.
++    L.antiseptic = r(F.x, F.y, F.w, F.h, '#c0743f', 'opacity=".55"');
++    // Троакары — три аккуратных порта.
++    var ports = [[F.x + F.w * 0.25, F.y + F.h * 0.3], [F.x + F.w * 0.75, F.y + F.h * 0.3], [cx, F.y + F.h * 0.75]];
++    L.trocar = ports.map(function (p) { return r(p[0] - 4, p[1] - 4, 8, 8, '#33454c', 'stroke="#c9d6da" stroke-width="2"'); }).join('');
++    // Лапароскоп — монитор включается.
++    L.laparoscope = r(197, 233, 38, 26, '#123b3a') + r(201, 237, 30, 18, '#1f6b5c') + r(214, 242, 4, 8, '#7fd6b0') + r(212, 244, 8, 4, '#7fd6b0') + r(201, 237, 8, 3, '#e2685a');
++    // Клипсы — отметки на мониторе.
++    L.clip_applier = r(204, 249, 3, 5, '#f0c94a') + r(209, 249, 3, 5, '#f0c94a') + r(224, 249, 3, 5, '#f0c94a');
++    // Эндоконтейнер — мешочек на столике рядом.
++    L.endobag = r(14, 176, 26, 20, '#2f4650', 'stroke="#050b0d" stroke-width="2"') + r(19, 180, 16, 12, '#8fd8c0', 'opacity=".8"');
++    // Скальпель — тонкая линия разреза (без крови).
++    L.scalpel = F.arm ? r(F.x + 6, cy - 1, F.w - 12, 2, '#8a4a3e') : r(F.x + 8, cy - 1, F.w - 16, 2, '#8a4a3e');
++    // Ранорасширитель — металлические скобы по краям.
++    L.retractor = r(F.x + 10, cy - 7, F.w - 20, 3, '#c9d6da', 'stroke="#050b0d" stroke-width="1"') + r(F.x + 10, cy + 4, F.w - 20, 3, '#c9d6da', 'stroke="#050b0d" stroke-width="1"');
++    // Зажим пуповины — малыш в кювезе.
++    L.cord_clamp = r(6, 236, 50, 36, '#d5e7e3', 'stroke="#050b0d" stroke-width="2"') + r(10, 240, 42, 28, '#a9d4e6') +
++      r(18, 246, 26, 16, '#f6f1e8', 'stroke="#050b0d" stroke-width="1"') + r(20, 248, 10, 10, '#f0c8a8') + r(22, 251, 2, 2, '#17201e') + r(26, 251, 2, 2, '#17201e') + r(38, 250, 4, 4, '#f0a95c');
++    // Пластина и винты.
++    L.plate = r(F.x + 4, cy - 3, F.w - 8, 6, '#aab8bd', 'stroke="#050b0d" stroke-width="1"');
++    L.drill = [0.2, 0.4, 0.6, 0.8].map(function (k) { return r(F.x + 4 + (F.w - 8) * k - 1, cy - 1, 3, 3, '#33454c'); }).join('');
++    // Шов — стежки + пластыри на порты.
++    var stitches = '';
++    var hasLine = requiredIds.indexOf('scalpel') !== -1;
++    if (hasLine) {
++      for (var sx = F.x + 10; sx <= F.x + F.w - 10; sx += 6) stitches += r(sx, cy - 4, 2, 8, '#2d63a8');
++    } else {
++      stitches = ports.map(function (p) { return r(p[0] - 5, p[1] - 5, 10, 10, '#f6f8f8', 'stroke="#9fb3b8" stroke-width="1"'); }).join('');
++    }
++    L.needle_holder = stitches;
++    return L;
++  }
++
++  function patientSvg() {
++    var L = layerMarkup();
++    var s = '<svg class="patient-svg" viewBox="0 0 240 300" shape-rendering="crispEdges" role="img" aria-label="Пациент на операционном столе, укрыт стерильной простынёй">';
++    // пол
++    s += r(0, 0, 240, 300, '#0e1d21');
++    for (var gx = 0; gx < 240; gx += 30) s += r(gx, 0, 1, 300, '#132a2e');
++    for (var gy = 0; gy < 300; gy += 30) s += r(0, gy, 240, 1, '#132a2e');
++    // стол и подлокотники
++    s += r(64, 8, 112, 286, '#5d6f74', 'stroke="#050b0d" stroke-width="3"');
++    s += r(8, 96, 58, 28, '#5d6f74', 'stroke="#050b0d" stroke-width="3"') + r(174, 96, 60, 28, '#5d6f74', 'stroke="#050b0d" stroke-width="3"');
++    // голова: шапочка, лицо, маска наркоза
++    s += r(98, 18, 44, 46, '#4f8fb5', 'stroke="#050b0d" stroke-width="2"');
++    s += r(102, 34, 36, 28, '#e3b393');
++    s += r(108, 40, 7, 2, '#5b3a2e') + r(125, 40, 7, 2, '#5b3a2e');
++    s += r(104, 48, 32, 14, '#8fc7d8', 'stroke="#050b0d" stroke-width="1"') + r(116, 62, 8, 10, '#6aa8bb');
++    // ширма анестезиолога
++    s += r(54, 76, 132, 8, '#2f7a5a', 'stroke="#050b0d" stroke-width="2"');
++    // простыня: тело и руки
++    s += r(68, 86, 104, 204, '#3f8f6a', 'stroke="#050b0d" stroke-width="2"');
++    s += r(12, 100, 56, 20, '#3f8f6a', 'stroke="#050b0d" stroke-width="2"');
++    s += r(172, 100, 58, 20, '#3f8f6a', 'stroke="#050b0d" stroke-width="2"');
++    for (var fy = 96; fy < 284; fy += 22) s += r(74, fy, 92, 2, '#357a5a');
++    s += r(118, 90, 2, 196, '#357a5a');
++    // монитор лапароскопа (выключен по умолчанию)
++    s += r(194, 230, 44, 32, '#1d2a30', 'stroke="#050b0d" stroke-width="2"') + r(213, 262, 6, 18, '#33454c') + r(203, 280, 26, 5, '#33454c');
++    s += r(197, 233, 38, 26, '#0a1416');
++    // операционное окно в простыне
++    s += r(F.x - 3, F.y - 3, F.w + 6, F.h + 6, '#2b5d48');
++    s += r(F.x, F.y, F.w, F.h, '#e6c2a5');
++    s += '<rect class="patient-target" x="' + (F.x - 6) + '" y="' + (F.y - 6) + '" width="' + (F.w + 12) + '" height="' + (F.h + 12) + '" fill="none" stroke="#f0a95c" stroke-width="2" stroke-dasharray="4 3"/>';
++    // слои прогресса — появляются по мере использования инструментов
++    ['antiseptic', 'scalpel', 'retractor', 'trocar', 'plate', 'drill', 'laparoscope', 'clip_applier', 'endobag', 'cord_clamp', 'needle_holder'].forEach(function (key) {
++      if (requiredIds.indexOf(key) !== -1 && L[key]) s += '<g class="patient-layer" data-layer="' + key + '">' + L[key] + '</g>';
++    });
++    s += '</svg>';
++    return s;
++  }
+ 
+   function setupScene() {
+-    var visual = sceneTemplates[scenario.visual] ? scenario.visual : 'appendectomy';
+-    el.scene.className = 'arm-scene op-scene op-scene--' + visual;
+-    el.scene.innerHTML = sceneTemplates[visual] + '<div class="op-scene__progress" aria-hidden="true">' +
+-      steps.map(function () { return '<i></i>'; }).join('') + '</div>';
+-    el.note.textContent = scenario.note || 'Неграфическая схема учебного тренажёра.';
+-    updateSceneProgress();
+-  }
+-
+-  function updateSceneProgress() {
+-    if (!el.scene) return;
+-    el.scene.setAttribute('data-step', String(state.index));
+-    Array.prototype.forEach.call(el.scene.querySelectorAll('.op-scene__progress i'), function (tick, index) {
+-      tick.classList.toggle('is-done', index < state.index);
+-      tick.classList.toggle('is-current', index === state.index && !state.finished);
++    el.scene.innerHTML = patientSvg();
++    el.note.textContent = scenario.note || 'Схематичный тренажёр, пациент укрыт стерильной простынёй.';
++  }
++  function showLayer(toolId) {
++    var g = el.scene.querySelector('[data-layer="' + toolId + '"]');
++    if (g) g.classList.add('is-on');
++    // после ранорасширителя линия разреза уже под скобами — после шва скрываем расширитель
++    if (toolId === 'needle_holder') {
++      ['retractor', 'trocar'].forEach(function (k) { var x = el.scene.querySelector('[data-layer="' + k + '"]'); if (x) x.classList.remove('is-on'); });
++    }
++  }
++
++  /* ---------- Стол с инструментами ---------- */
++  function renderTray() {
++    el.tray.innerHTML = tools.map(function (tool, i) {
++      return '<div class="tray-slot" data-slot="' + i + '" data-tool="' + esc(tool.id) + '">' +
++        '<div class="tray-slot__place">' + toolSvg(tool.icon, 'tray-slot__ghost') +
++          '<button type="button" class="tool" data-tool="' + esc(tool.id) + '" aria-label="' + esc(tool.name) + ': перетащите к пациенту или нажмите Enter">' + toolSvg(tool.icon) + '</button>' +
++          '<span class="tray-slot__num">' + (i + 1) + '</span>' +
++        '</div>' +
++        '<span class="tray-slot__label">' + esc(tool.name) + '</span>' +
++      '</div>';
++    }).join('');
++    el.tableCount.textContent = tools.length + ' предметов · нужны ' + steps.length;
++    Array.prototype.forEach.call(el.tray.querySelectorAll('.tool'), bindTool);
++  }
++
++  /* ---------- Drag & drop на Pointer Events ---------- */
++  var drag = null;
++
++  function bindTool(btn) {
++    btn.addEventListener('pointerdown', onDown);
++    btn.addEventListener('keydown', function (e) {
++      if ((e.key === 'Enter' || e.key === ' ') && canInteract()) { e.preventDefault(); applyTool(btn, null); }
+     });
++    btn.addEventListener('dragstart', function (e) { e.preventDefault(); });
+   }
++  function canInteract() { return state.started && !state.finished && !state.busy; }
+ 
++  function onDown(e) {
++    if (!canInteract() || drag || (e.button !== undefined && e.button !== 0)) return;
++    var btn = e.currentTarget;
++    if (btn.classList.contains('is-returning')) return;
++    e.preventDefault();
++    try { btn.setPointerCapture(e.pointerId); } catch (err) {}
++    drag = { btn: btn, id: e.pointerId, x0: e.clientX, y0: e.clientY, dx: 0, dy: 0, moved: false };
++    btn.classList.add('is-grabbed');
++    btn.closest('.tray-slot').classList.add('is-lifted');
++    document.body.classList.add('is-dragging-tool');
++    btn.addEventListener('pointermove', onMove);
++    btn.addEventListener('pointerup', onUp);
++    btn.addEventListener('pointercancel', onCancel);
++    btn.addEventListener('lostpointercapture', onCancel);
++    setTransform(btn, 0, 0, true);
++  }
++  function onMove(e) {
++    if (!drag || e.pointerId !== drag.id) return;
++    drag.dx = e.clientX - drag.x0; drag.dy = e.clientY - drag.y0;
++    if (!drag.moved && Math.abs(drag.dx) + Math.abs(drag.dy) > RULES.dragThreshold) drag.moved = true;
++    setTransform(drag.btn, drag.dx, drag.dy, true);
++    el.drop.classList.toggle('is-over', isOverDrop(e.clientX, e.clientY));
++  }
++  function onUp(e) {
++    if (!drag || e.pointerId !== drag.id) return;
++    var d = endDrag();
++    if (d.moved && isOverDrop(e.clientX, e.clientY)) applyTool(d.btn, d);
++    else returnHome(d.btn); // кликнули или отпустили мимо — предмет возвращается на место
++  }
++  function onCancel(e) {
++    if (!drag || (e.pointerId !== undefined && e.pointerId !== drag.id)) return;
++    var d = endDrag();
++    returnHome(d.btn);
++  }
++  function endDrag() {
++    var d = drag; drag = null;
++    var btn = d.btn;
++    btn.removeEventListener('pointermove', onMove);
++    btn.removeEventListener('pointerup', onUp);
++    btn.removeEventListener('pointercancel', onCancel);
++    btn.removeEventListener('lostpointercapture', onCancel);
++    try { btn.releasePointerCapture(d.id); } catch (err) {}
++    document.body.classList.remove('is-dragging-tool');
++    el.drop.classList.remove('is-over');
++    return d;
++  }
++  function setTransform(btn, dx, dy, lifted) {
++    btn.style.transform = 'translate(' + dx + 'px,' + dy + 'px)' + (lifted ? ' scale(1.12) rotate(-6deg)' : '');
++  }
++  function isOverDrop(x, y) {
++    var b = el.drop.getBoundingClientRect();
++    return x >= b.left && x <= b.right && y >= b.top && y <= b.bottom;
++  }
++
++  function returnHome(btn, shake) {
++    btn.classList.remove('is-grabbed');
++    btn.classList.add('is-returning');
++    if (shake) btn.classList.add('is-rejected');
++    // форсируем reflow, чтобы transition сработал от текущей позиции
++    void btn.offsetWidth;
++    btn.style.transform = '';
++    var done = false;
++    function finish() {
++      if (done) return; done = true;
++      btn.classList.remove('is-returning', 'is-rejected');
++      var slot = btn.closest('.tray-slot'); if (slot) slot.classList.remove('is-lifted');
++    }
++    btn.addEventListener('transitionend', function handler(ev) { if (ev.propertyName === 'transform') { btn.removeEventListener('transitionend', handler); finish(); } });
++    setTimeout(finish, 600);
++  }
++
++  /** Летим к операционному окну — для клавиатуры (или после броска) */
++  function flyToPatient(btn, d) {
++    var target = el.scene.querySelector('.patient-target');
++    var tb = (target || el.drop).getBoundingClientRect();
++    var slot = btn.closest('.tray-slot__place').getBoundingClientRect();
++    var dx = tb.left + tb.width / 2 - (slot.left + slot.width / 2);
++    var dy = tb.top + tb.height / 2 - (slot.top + slot.height / 2);
++    btn.classList.remove('is-grabbed');
++    btn.classList.add('is-applied');
++    if (!d) { void btn.offsetWidth; }
++    btn.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(.35)';
++  }
++
++  /* ---------- Логика шага ---------- */
++  function applyTool(btn, d) {
++    if (!canInteract()) { returnHome(btn); return; }
++    var id = btn.getAttribute('data-tool');
++    var tool = toolById(id) || { name: id };
++    var step = steps[state.index];
++    state.attempts += 1;
++
++    if (id === step.tool) {
++      state.busy = true;
++      var gained = RULES.correct + (state.stepMistakes === 0 ? RULES.cleanBonus : 0);
++      state.score += gained;
++      state.used[id] = true;
++      flyToPatient(btn, d);
++      el.drop.classList.add('is-accepted');
++      setFeedback('good', '✓ ' + tool.name + ' — верно! ' + step.note + ' +' + gained + ' очков.');
++      el.note.textContent = step.note;
++      setTimeout(function () {
++        var slot = btn.closest('.tray-slot');
++        slot.classList.remove('is-lifted', 'is-hint');
++        slot.classList.add('is-used');
++        btn.disabled = true;
++        btn.tabIndex = -1;
++        el.drop.classList.remove('is-accepted');
++        showLayer(id);
++        state.index += 1;
++        state.stepMistakes = 0;
++        state.busy = false;
++        renderHud();
++        if (state.index >= steps.length) finish(true); else renderStep(true);
++      }, 520);
++      renderHud();
++      return;
++    }
++
++    // Ошибка: предмет возвращается на своё место со «встряской»
++    var laterIndex = requiredIds.indexOf(id);
++    var p = laterIndex > state.index ? RULES.wrongOrder : RULES.wrongTool;
++    state.mistakes += 1;
++    state.stepMistakes += 1;
++    state.score = Math.max(0, state.score - p.score);
++    state.rep = Math.max(0, state.rep - p.rep);
++    state.remaining = Math.max(0, state.remaining - p.time);
++    if (laterIndex > state.index) {
++      setFeedback('warn', '«' + tool.name + '» понадобится, но позже. Сначала — «' + step.title.toLowerCase() + '». −' + p.score + ' очков, −' + p.time + ' сек.');
++    } else {
++      setFeedback('bad', '«' + tool.name + '» не нужен в этой операции. Он остаётся на столе. −' + p.score + ' очков, −' + p.rep + ' точности, −' + p.time + ' сек.');
++    }
++    el.drop.classList.add('is-rejected');
++    setTimeout(function () { el.drop.classList.remove('is-rejected'); }, 450);
++    returnHome(btn, true);
++    bumpHeartRate(p === RULES.wrongTool ? 18 : 8);
++    if (state.stepMistakes >= RULES.hintAfter) highlightHint();
++    renderHud();
++    if (state.rep <= 0 || state.remaining <= 0) setTimeout(function () { finish(false); }, 400);
++  }
++
++  function highlightHint() {
++    var slot = el.tray.querySelector('.tray-slot[data-tool="' + steps[state.index].tool + '"]');
++    if (slot && !slot.classList.contains('is-hint')) {
++      slot.classList.add('is-hint');
++      el.dropHint.textContent = 'Подсказка: нужный инструмент мигает на столе';
++    }
++  }
++
++  function setFeedback(kind, text) {
++    el.feedback.textContent = text;
++    el.feedback.className = 'op-feedback is-' + kind;
++  }
++
++  function bumpHeartRate(delta) {
++    state.hr = Math.min(130, state.hr + delta);
++    el.vitals.classList.add('is-alert');
++    renderVitals();
++    clearInterval(state.hrTimer);
++    state.hrTimer = setInterval(function () {
++      state.hr = Math.max(72, state.hr - 2);
++      renderVitals();
++      if (state.hr <= 72) { clearInterval(state.hrTimer); el.vitals.classList.remove('is-alert'); }
++    }, 400);
++  }
++  function renderVitals() { el.hr.textContent = state.hr; }
++
++  /* ---------- Рендер ---------- */
+   function uuid() {
+     if (window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID();
+-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) { var r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); });
++    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) { var n = Math.random() * 16 | 0; return (c === 'x' ? n : (n & 3 | 8)).toString(16); });
+   }
+-  function shuffle(list) { var a = list.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var x = a[i]; a[i] = a[j]; a[j] = x; } return a; }
+-  function formatTime(sec) { var m = Math.floor(Math.max(0, sec) / 60); var s = Math.max(0, sec) % 60; return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s; }
++  function formatTime(sec) { sec = Math.max(0, sec); var m = Math.floor(sec / 60), s = sec % 60; return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s; }
+ 
+-  function renderHud() { el.time.textContent = formatTime(state.remaining); el.score.textContent = state.score; el.rep.textContent = state.rep; el.time.classList.toggle('is-warning', state.remaining <= 45); }
++  function renderHud() {
++    el.time.textContent = formatTime(state.remaining);
++    el.score.textContent = state.score;
++    el.rep.textContent = state.rep;
++    el.time.classList.toggle('is-warning', state.remaining <= 45);
++  }
+   function renderChecklist() {
+-    el.checklist.innerHTML = steps.map(function (step, index) {
+-      var done = index < state.index, current = index === state.index;
+-      return '<div class="op-check ' + (done ? 'is-done' : '') + (current ? ' is-current' : '') + '"><i>' + (done ? '✓' : String(index + 1).padStart(2, '0')) + '</i><span>' + step.title + '</span></div>';
++    el.checklist.innerHTML = '<div class="op-seq__title">Порядок действий</div>' + steps.map(function (step, index) {
++      var done = index < state.index, current = index === state.index && !state.finished;
++      var tool = done ? toolById(step.tool) : null;
++      return '<div class="op-check' + (done ? ' is-done' : '') + (current ? ' is-current' : '') + '">' +
++        '<i>' + (done ? '✓' : String(index + 1).padStart(2, '0')) + '</i>' +
++        '<span>' + esc(step.title) + (tool ? '<small>' + esc(tool.name) + '</small>' : '') + '</span>' +
++        (tool ? '<em class="op-check__tool">' + toolSvg(tool.icon) + '</em>' : '<em class="op-check__tool is-empty">?</em>') +
++      '</div>';
+     }).join('');
+   }
+-  function renderStep() {
+-    if (state.index >= steps.length) { finish(true); return; }
++  function renderStep(keepFeedback) {
+     var step = steps[state.index];
+     el.stepNumber.textContent = 'Шаг ' + (state.index + 1) + ' из ' + steps.length;
+     el.question.textContent = step.title;
+     el.description.textContent = step.description;
+-    el.feedback.textContent = '';
+-    el.feedback.className = 'op-feedback';
+-    el.actions.innerHTML = shuffle([step.correct].concat(step.wrong)).map(function (answer) { return '<button class="op-action" type="button" data-correct="' + (answer === step.correct ? '1' : '0') + '">' + answer + '</button>'; }).join('');
+-    Array.prototype.forEach.call(el.actions.querySelectorAll('.op-action'), function (button) { button.addEventListener('click', choose); });
+-    renderChecklist(); renderHud();
++    el.dropHint.textContent = 'Перетащите нужный инструмент к пациенту';
++    if (!keepFeedback) setFeedback('info', 'Выберите на столе инструмент для этого этапа и перетащите его к пациенту.');
++    renderChecklist();
++    renderHud();
+   }
+-  function choose(event) {
++
++  function tick() {
+     if (state.finished) return;
+-    var button = event.currentTarget;
+-    if (button.dataset.correct === '1') {
+-      Array.prototype.forEach.call(el.actions.querySelectorAll('.op-action'), function (b) { b.disabled = true; });
+-      button.classList.add('is-correct');
+-      state.score += 80;
+-      el.feedback.textContent = 'Верно. ' + steps[state.index].note;
+-      el.feedback.className = 'op-feedback is-good';
+-      el.note.textContent = steps[state.index].note;
+-      state.index += 1;
+-      updateSceneProgress();
+-      renderChecklist(); renderHud();
+-      setTimeout(renderStep, 750);
+-    } else {
+-      button.classList.add('is-wrong');
+-      button.disabled = true;
+-      state.mistakes += 1;
+-      state.score = Math.max(0, state.score - 20);
+-      state.rep = Math.max(0, state.rep - 15);
+-      state.remaining = Math.max(0, state.remaining - 8);
+-      el.feedback.textContent = 'Не для этого этапа. В учебном сценарии попробуйте безопасную альтернативу. −20 очков, −15 точности, −8 сек.';
+-      el.feedback.className = 'op-feedback is-bad';
+-      renderHud();
+-      if (state.rep <= 0 || state.remaining <= 0) setTimeout(function () { finish(false); }, 350);
+-    }
++    state.remaining -= 1;
++    renderHud();
++    if (state.remaining <= 0) finish(false);
+   }
+-  function tick() { if (state.finished) return; state.remaining -= 1; renderHud(); if (state.remaining <= 0) finish(false); }
++
+   function finish(success) {
+     if (state.finished) return;
+-    state.finished = true; clearInterval(state.timer);
+-    var accuracy = Math.round(steps.length / (steps.length + state.mistakes) * 100);
+-    el.finalLabel.textContent = success ? 'Сценарий завершён' : 'Сценарий остановлен';
+-    el.finalTitle.textContent = success ? 'Сценарий завершён' : 'Нужна дополнительная тренировка';
+-    el.finalText.textContent = success ? 'Все ' + steps.length + ' этапов сценария «' + scenario.title + '» выполнены. Это неграфический учебный тренажёр, а не медицинская инструкция.' : 'Таймер или точность закончились раньше. Повтори случайно назначенный сценарий и следуй чек-листу команды.';
++    state.finished = true;
++    clearInterval(state.timer);
++    if (drag) returnHome(endDrag().btn);
++    renderChecklist();
++    el.drop.classList.add(success ? 'is-complete' : 'is-stopped');
++    el.dropHint.textContent = success ? 'Операция завершена' : 'Операция остановлена';
++    if (success) state.score += Math.max(0, state.remaining); // бонус за оставшееся время
++    renderHud();
++
++    var accuracy = state.attempts ? Math.round(steps.length / Math.max(state.attempts, steps.length) * 100) : 0;
++    if (!success) accuracy = state.attempts ? Math.round(state.index / state.attempts * 100) : 0;
++    el.finalLabel.textContent = success ? 'Операция завершена' : 'Операция остановлена';
++    el.finalTitle.textContent = success ? 'Отличная работа, ассистент!' : 'Нужна дополнительная тренировка';
++    el.finalText.textContent = success
++      ? 'Все ' + steps.length + ' этапов операции «' + scenario.title + '» выполнены в правильном порядке. Ошибок: ' + state.mistakes + '. Бонус за оставшееся время включён в счёт.'
++      : 'Время или точность закончились раньше: выполнено ' + state.index + ' из ' + steps.length + ' этапов. Попробуйте ещё раз — порядок инструментов запоминается быстро.';
+     el.finalScore.textContent = state.score;
+     el.finalAccuracy.textContent = accuracy + '%';
+     el.finalReward.textContent = success ? '+90 ₽ · +50 XP' : '+20 ₽ · +10 XP';
+@@ -109,25 +428,27 @@
+     submit(success);
+ 
+     var debrief = success ? [
+-      { speaker: 'ilya', text: 'Отлично, все этапы выполнены в нужной последовательности. Это тренировка на манекене: спокойно закрепили навык без риска для пациента.' },
+-      { speaker: 'vera', text: 'Результат записан. Следующий шаг — продолжать смены и постепенно готовить подстанцию к большему потоку.' }
++      { speaker: 'ilya', text: 'Отлично! Ты подавал инструменты в правильном порядке и не взял лишнего. Именно так работает операционная сестра — хирург протягивает руку, а нужный инструмент уже в ней.' },
++      { speaker: 'vera', text: 'Результат записан. Продолжай смены и тренировки — подстанция растёт вместе с тобой.' }
+     ] : [
+-      { speaker: 'ilya', text: 'Ничего страшного: это учебный сценарий. Ошибки здесь помогают заметить этап, который стоит повторить.' },
+-      { speaker: 'ilya', text: 'Когда будешь готов, повтори тренировку. На подстанции я помогу разобраться.' }
++      { speaker: 'ilya', text: 'Ничего страшного: это тренажёр. Запомни логику — сначала обработка поля, потом доступ, основная работа и только в конце швы.' },
++      { speaker: 'vera', text: 'Результат записан. Попробуй ещё раз — с каждым повтором порядок запоминается лучше.' }
+     ];
+     var storyKey = success ? 'operation-debrief-success' : 'operation-debrief-retry';
+     function revealFinal() {
+       el.final.hidden = false;
+-      var firstAction = document.getElementById('op-again');
++      var firstAction = byId('op-again');
+       if (firstAction) firstAction.focus();
+     }
+-    if (window.StoryDialogue) {
+-      window.StoryDialogue.showOnce(storyKey, debrief, { nickname: DATA.nick, title: success ? 'Сюжет · разбор тренировки' : 'Сюжет · поддержка наставника' })
+-        .then(revealFinal);
+-    } else {
+-      revealFinal();
+-    }
++    setTimeout(function () {
++      if (window.StoryDialogue) {
++        window.StoryDialogue.showOnce(storyKey, debrief, { nickname: DATA.nick, title: success ? 'Сюжет · разбор операции' : 'Сюжет · поддержка наставника' }).then(revealFinal);
++      } else {
++        revealFinal();
++      }
++    }, 900);
+   }
++
+   function submit(success) {
+     if (!DATA.endpoint || state.score <= 0) { el.finalSave.textContent = 'Результат без очков не отправлен в таблицу.'; return; }
+     fetch(DATA.endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify({ nickname: DATA.nick, score: state.score, token: state.token, mode: 'operation', success: success }) })
+@@ -135,23 +456,25 @@
+       .then(function (data) { el.finalSave.textContent = data && data.ok ? 'Результат сохранён. Место в топе: #' + (data.rank || '—') + '. Прогресс обновлён в личном кабинете.' : 'Не удалось сохранить результат: база недоступна.'; })
+       .catch(function () { el.finalSave.textContent = 'Нет связи: результат не сохранён.'; });
+   }
++
+   function startScenario() {
++    state.started = true;
+     renderStep();
+     state.timer = setInterval(tick, 1000);
+   }
+ 
+   function showTrainingBriefing() {
+     var progress = DATA.storyProgress || {};
+-    if (!window.StoryDialogue || Number(progress.operations_finished) > 0) {
+-      startScenario();
+-      return;
+-    }
+-    window.StoryDialogue.showOnce('operation-training-briefing', [
+-      { speaker: 'ilya', text: 'Добро пожаловать в учебную зону. Здесь работает манекен, а не пациент: сначала читаем условие, затем выбираем действия по порядку.' },
+-      { speaker: 'ilya', text: 'Таймер начнётся после брифинга. Если понадобится, можно сразу показать текст полностью или пропустить диалог.' }
++    if (!window.StoryDialogue || Number(progress.operations_finished) > 0) { startScenario(); return; }
++    window.StoryDialogue.showOnce('operation-dnd-briefing', [
++      { speaker: 'ilya', text: 'Сегодня ты ассистируешь хирургу. Слева — пациент под стерильной простынёй, справа — инструментальный стол.' },
++      { speaker: 'ilya', text: 'Перетаскивай нужный инструмент к пациенту. На столе восемь предметов, а нужны только пять — и строго по порядку. Передумал — просто отпусти предмет, он вернётся на место.' }
+     ], { nickname: DATA.nick, title: 'Сюжет · тренировка с наставником' }).then(startScenario);
+   }
+ 
+   setupScene();
++  renderTray();
++  renderChecklist();
++  renderHud();
+   showTrainingBriefing();
+ })();
+diff --git a/includes/operation_scenarios.php b/includes/operation_scenarios.php
+index 0064405..66ccec7 100644
+--- a/includes/operation_scenarios.php
++++ b/includes/operation_scenarios.php
+@@ -1,179 +1,213 @@
+ <?php
+-/** Неграфические учебные сценарии операции. Хирургические действия описаны только на уровне командного процесса. */
++/**
++ * Учебные сценарии операции (drag & drop).
++ *
++ * Каждый сценарий:
++ *   tools — 8 инструментов на столе. Порядок в массиве = место на столе (слот).
++ *           Из них 5 правильных, 3 — лишние (отвлекающие).
++ *   steps — 5 этапов строго по порядку; каждый этап требует один инструмент (tool = id).
++ *
++ * Иконки инструментов рисуются в assets/js/operation.js (TOOL_ICONS) по ключу icon.
++ * Чтобы добавить операцию — скопируйте блок, поменяйте tools/steps/visual.
++ * visual: appendectomy | cholecystectomy | cesarean | osteosynthesis (зона на схеме пациента).
++ *
++ * Пациент всегда изображён схематично: укрыт стерильной простынёй, видна только
++ * обработанная зона — без крови и анатомических подробностей.
++ */
+ return [
+     [
+         'id' => 'appendectomy',
+         'title' => 'Лапароскопическая аппендэктомия',
+-        'summary' => 'Случай назначается случайно. Учебный тренажёр: подготовка команды, безопасная работа с чек-листом и передача пациента — без изображений тела или операционного поля.',
++        'summary' => 'Перетащите нужные инструменты со стола к пациенту в правильном порядке. На столе 8 предметов — для операции нужны только 5.',
+         'visual' => 'appendectomy',
+-        'note' => 'Схема лапароскопического тренажёра. Анатомические и графические детали не показываются.',
++        'note' => 'Пациент под наркозом и укрыт стерильным бельём. Открыта только зона операции.',
++        'tools' => [
++            ['id' => 'laparoscope',   'name' => 'Лапароскоп',        'icon' => 'laparoscope'],
++            ['id' => 'saw',           'name' => 'Костная пила',      'icon' => 'saw'],
++            ['id' => 'antiseptic',    'name' => 'Антисептик',        'icon' => 'antiseptic'],
++            ['id' => 'clip_applier',  'name' => 'Клипатор',          'icon' => 'clip_applier'],
++            ['id' => 'drill',         'name' => 'Хирургическая дрель','icon' => 'drill'],
++            ['id' => 'needle_holder', 'name' => 'Иглодержатель с нитью', 'icon' => 'needle_holder'],
++            ['id' => 'cord_clamp',    'name' => 'Зажим для пуповины','icon' => 'cord_clamp'],
++            ['id' => 'trocar',        'name' => 'Троакар',           'icon' => 'trocar'],
++        ],
+         'steps' => [
+             [
+-                'title' => 'Проверка пациента и плана',
+-                'description' => 'Перед вмешательством команда подтверждает данные пациента, план операции, согласие и известные аллергии.',
+-                'correct' => 'Сверить пациента, план, согласие и аллергии по чек-листу',
+-                'wrong' => ['Перейти к подготовке, не сверив данные', 'Уточнить аллергию уже после завершения'],
+-                'note' => 'Идентификация и план подтверждены до начала работы команды.',
++                'tool' => 'antiseptic',
++                'title' => 'Обработка операционного поля',
++                'description' => 'Пациент спит и укрыт стерильной простынёй. Сначала обработайте открытую зону, чтобы не занести инфекцию.',
++                'note' => 'Поле обработано антисептиком — риск инфекции снижен.',
+             ],
+             [
+-                'title' => 'Командный тайм-аут',
+-                'description' => 'Весь операционный состав вслух подтверждает вмешательство, готовность и распределение ролей.',
+-                'correct' => 'Провести общий тайм-аут и подтвердить роли команды',
+-                'wrong' => ['Пропустить тайм-аут ради скорости', 'Оставить проверку только одному сотруднику'],
+-                'note' => 'Общая проверка снижает риск несогласованности команды.',
++                'tool' => 'trocar',
++                'title' => 'Доступ через проколы',
++                'description' => 'Лапароскопия делается без большого разреза. Нужны «порты» — через них введут камеру и инструменты.',
++                'note' => 'Установлены порты-троакары: доступ через три маленьких прокола.',
+             ],
+             [
+-                'title' => 'Подготовка системы',
+-                'description' => 'Проверьте готовность лапароскопического оборудования, стерильного набора и счёт инструментов.',
+-                'correct' => 'Проверить оборудование и выполнить начальный счёт инструментов',
+-                'wrong' => ['Использовать неподготовленный набор', 'Отложить счёт до окончания операции'],
+-                'note' => 'Оборудование и инструменты проверены по безопасному порядку.',
++                'tool' => 'laparoscope',
++                'title' => 'Осмотр на мониторе',
++                'description' => 'Хирургу нужно увидеть, что происходит внутри. Введите камеру — изображение появится на мониторе.',
++                'note' => 'Камера введена, хирург видит картинку на мониторе.',
+             ],
+             [
+-                'title' => 'Работа по плану команды',
+-                'description' => 'Вмешательство выполняет хирург по утверждённому плану; остальные поддерживают связь и следуют чек-листу.',
+-                'correct' => 'Поддерживать работу команды и сообщать о каждом отклонении',
+-                'wrong' => ['Самостоятельно менять план без согласования', 'Отключить монитор, чтобы освободить место'],
+-                'note' => 'Согласованная работа и своевременная коммуникация важнее спешки.',
++                'tool' => 'clip_applier',
++                'title' => 'Перекрытие сосудов и отростка',
++                'description' => 'Перед удалением воспалённый отросток и его сосуды нужно надёжно пережать специальными клипсами.',
++                'note' => 'Клипсы наложены, отросток удалён.',
+             ],
+             [
+-                'title' => 'Завершение и передача',
+-                'description' => 'После завершения команда выполняет финальный счёт, фиксирует необходимые записи и передаёт пациента в послеоперационную зону.',
+-                'correct' => 'Сверить финальный счёт и передать пациента с кратким отчётом',
+-                'wrong' => ['Завершить смену без финального счёта', 'Передать пациента без сообщения команде восстановления'],
+-                'note' => 'Финальная проверка и передача закрывают сценарий безопасно.',
++                'tool' => 'needle_holder',
++                'title' => 'Ушивание проколов',
++                'description' => 'Инструменты извлечены. Закройте маленькие проколы аккуратными швами.',
++                'note' => 'Проколы ушиты — операция завершена.',
+             ],
+         ],
+     ],
+     [
+         'id' => 'forearm_osteosynthesis',
+         'title' => 'Остеосинтез перелома предплечья',
+-        'summary' => 'Случай назначается случайно. Учебная схема фиксации перелома без ран и хирургических изображений: проверка стороны, командный план и контроль результата.',
++        'summary' => 'Сопоставьте отломки кости и закрепите их пластиной. Перетащите со стола только нужные инструменты и в правильном порядке.',
+         'visual' => 'osteosynthesis',
+-        'note' => 'Схема внешней фиксации на манекене. Изображений травмы нет.',
++        'note' => 'Рука лежит на приставном столике, всё остальное закрыто стерильной простынёй.',
++        'tools' => [
++            ['id' => 'plate',         'name' => 'Пластина с винтами','icon' => 'plate'],
++            ['id' => 'trocar',        'name' => 'Троакар',           'icon' => 'trocar'],
++            ['id' => 'needle_holder', 'name' => 'Иглодержатель с нитью', 'icon' => 'needle_holder'],
++            ['id' => 'scalpel',       'name' => 'Скальпель',         'icon' => 'scalpel'],
++            ['id' => 'endobag',       'name' => 'Эндоконтейнер',     'icon' => 'endobag'],
++            ['id' => 'antiseptic',    'name' => 'Антисептик',        'icon' => 'antiseptic'],
++            ['id' => 'laparoscope',   'name' => 'Лапароскоп',        'icon' => 'laparoscope'],
++            ['id' => 'drill',         'name' => 'Хирургическая дрель','icon' => 'drill'],
++        ],
+         'steps' => [
+             [
+-                'title' => 'Проверка стороны и данных',
+-                'description' => 'Перед ортопедическим вмешательством перепроверьте пациента, сторону, план и согласие.',
+-                'correct' => 'Сверить личность пациента, сторону и план с документами и командой',
+-                'wrong' => ['Ориентироваться только на устное предположение', 'Начать подготовку без подтверждения стороны'],
+-                'note' => 'Сторона и план подтверждены до подготовки.',
++                'tool' => 'antiseptic',
++                'title' => 'Обработка операционного поля',
++                'description' => 'Рука уложена на приставной столик. Обработайте открытую зону предплечья перед началом.',
++                'note' => 'Поле обработано антисептиком.',
+             ],
+             [
+-                'title' => 'План и оборудование',
+-                'description' => 'Команда сверяет план с результатами визуализации и готовит назначенный набор.',
+-                'correct' => 'Подтвердить план, визуализацию и готовность нужного набора',
+-                'wrong' => ['Использовать случайный набор имплантов', 'Не проверять доступность оборудования'],
+-                'note' => 'Команда подготовила набор согласно заранее принятому плану.',
++                'tool' => 'scalpel',
++                'title' => 'Доступ к кости',
++                'description' => 'Чтобы поставить фиксатор, нужен аккуратный небольшой разрез над местом перелома.',
++                'note' => 'Сделан аккуратный доступ к месту перелома.',
+             ],
+             [
+-                'title' => 'Тайм-аут и стерильность',
+-                'description' => 'До начала работы проведите общий тайм-аут и проверьте стерильность инструментов.',
+-                'correct' => 'Подтвердить процедуру на тайм-ауте и проверить стерильный набор',
+-                'wrong' => ['Пропустить проверку стерильности', 'Провести тайм-аут после завершения'],
+-                'note' => 'Проверки выполнены до начала вмешательства.',
++                'tool' => 'plate',
++                'title' => 'Фиксация отломков',
++                'description' => 'Отломки кости сопоставлены. Приложите металлический фиксатор, который будет держать кость, пока она срастается.',
++                'note' => 'Пластина приложена к кости.',
+             ],
+             [
+-                'title' => 'Фиксация по плану',
+-                'description' => 'В рамках тренажёра команда следует утверждённому плану фиксации и согласованно использует контрольную визуализацию.',
+-                'correct' => 'Следовать плану хирурга и сообщать команде о контрольных этапах',
+-                'wrong' => ['Менять план без обсуждения с хирургом', 'Игнорировать замечания команды контроля'],
+-                'note' => 'Учебный этап пройден с соблюдением плана и командной связи.',
++                'tool' => 'drill',
++                'title' => 'Закрепление пластины',
++                'description' => 'Пластину нужно прикрутить винтами. Для этого подготовьте в кости маленькие отверстия.',
++                'note' => 'Винты закреплены — кость надёжно зафиксирована.',
+             ],
+             [
+-                'title' => 'Контроль и передача',
+-                'description' => 'В завершение оценивают результат по плану, состояние кисти и оформляют передачу в послеоперационную зону.',
+-                'correct' => 'Проверить контрольные показатели и передать пациента с отчётом',
+-                'wrong' => ['Не проверять состояние кисти после фиксации', 'Завершить без записи и передачи'],
+-                'note' => 'Контроль результата и передача завершены.',
++                'tool' => 'needle_holder',
++                'title' => 'Ушивание раны',
++                'description' => 'Фиксатор установлен. Закройте разрез швами.',
++                'note' => 'Рана ушита — операция завершена.',
+             ],
+         ],
+     ],
+     [
+         'id' => 'cholecystectomy',
+         'title' => 'Лапароскопическая холецистэктомия',
+-        'summary' => 'Случай назначается случайно. Схематичная симуляция командной подготовки лапароскопической операции — без крови, разрезов и реалистичных изображений.',
++        'summary' => 'Удаление желчного пузыря через проколы. Перетащите нужные инструменты к пациенту по порядку — лишние оставьте на столе.',
+         'visual' => 'cholecystectomy',
+-        'note' => 'Абстрактная схема операционной и лапароскопической системы.',
++        'note' => 'Пациент под наркозом и укрыт стерильным бельём. Открыта только зона операции.',
++        'tools' => [
++            ['id' => 'clip_applier',  'name' => 'Клипатор',          'icon' => 'clip_applier'],
++            ['id' => 'antiseptic',    'name' => 'Антисептик',        'icon' => 'antiseptic'],
++            ['id' => 'mallet',        'name' => 'Ортопедический молоток', 'icon' => 'mallet'],
++            ['id' => 'endobag',       'name' => 'Эндоконтейнер',     'icon' => 'endobag'],
++            ['id' => 'trocar',        'name' => 'Троакар',           'icon' => 'trocar'],
++            ['id' => 'plate',         'name' => 'Пластина с винтами','icon' => 'plate'],
++            ['id' => 'laparoscope',   'name' => 'Лапароскоп',        'icon' => 'laparoscope'],
++            ['id' => 'cord_clamp',    'name' => 'Зажим для пуповины','icon' => 'cord_clamp'],
++        ],
+         'steps' => [
+             [
+-                'title' => 'Идентификация и согласие',
+-                'description' => 'Команда сверяет личность пациента, запланированную операцию, согласие и информацию об аллергиях.',
+-                'correct' => 'Подтвердить пациента, план операции, согласие и аллергии',
+-                'wrong' => ['Начать подготовку по одному только номеру палаты', 'Не учитывать сведения об аллергиях'],
+-                'note' => 'Ключевые сведения подтверждены до перемещения к следующему этапу.',
++                'tool' => 'antiseptic',
++                'title' => 'Обработка операционного поля',
++                'description' => 'Пациент спит, всё тело укрыто стерильной простынёй. Обработайте открытую зону.',
++                'note' => 'Поле обработано антисептиком.',
+             ],
+             [
+-                'title' => 'Брифинг команды',
+-                'description' => 'Уточните роли, план коммуникации и порядок действий при необходимости остановить сценарий.',
+-                'correct' => 'Провести брифинг, распределить роли и подтвердить сигнал остановки',
+-                'wrong' => ['Оставить роли нераспределёнными', 'Не сообщать команде о возможных рисках'],
+-                'note' => 'Команда знает свои роли и может своевременно остановить небезопасный процесс.',
++                'tool' => 'trocar',
++                'title' => 'Доступ через проколы',
++                'description' => 'Большой разрез не нужен — установите порты, через которые пройдут камера и инструменты.',
++                'note' => 'Порты-троакары установлены.',
+             ],
+             [
+-                'title' => 'Подготовка оборудования',
+-                'description' => 'Проверьте лапароскопическую систему, стерильность набора и начальный счёт инструментов.',
+-                'correct' => 'Проверить систему, стерильность и начальный счёт',
+-                'wrong' => ['Начать с непроверенным оборудованием', 'Не вести счёт инструментов'],
+-                'note' => 'Оборудование и набор готовы по чек-листу.',
++                'tool' => 'laparoscope',
++                'title' => 'Осмотр на мониторе',
++                'description' => 'Введите камеру, чтобы вся команда видела ход операции на экране.',
++                'note' => 'Изображение выведено на монитор.',
+             ],
+             [
+-                'title' => 'Согласованное выполнение',
+-                'description' => 'Хирург работает по принятому плану; команда поддерживает мониторинг и вслух подтверждает важные этапы.',
+-                'correct' => 'Следовать плану и поддерживать замкнутую коммуникацию команды',
+-                'wrong' => ['Самовольно менять настройки и план', 'Отвлекать команду несогласованными действиями'],
+-                'note' => 'Этап пройден без самовольных изменений и с чёткой коммуникацией.',
++                'tool' => 'clip_applier',
++                'title' => 'Перекрытие протока и артерии',
++                'description' => 'Перед удалением пузыря его проток и артерию нужно надёжно перекрыть клипсами.',
++                'note' => 'Клипсы наложены, пузырь отделён.',
+             ],
+             [
+-                'title' => 'Финальная проверка',
+-                'description' => 'Проведите финальный счёт, оформите необходимые записи и передайте пациента команде восстановления.',
+-                'correct' => 'Выполнить финальный счёт и структурированную передачу пациента',
+-                'wrong' => ['Закончить без финальной проверки', 'Уйти до передачи пациента'],
+-                'note' => 'Проверка и передача выполнены по завершении сценария.',
++                'tool' => 'endobag',
++                'title' => 'Извлечение',
++                'description' => 'Желчный пузырь отделён. Его извлекают через маленький прокол в специальном мешочке-контейнере.',
++                'note' => 'Пузырь извлечён в контейнере — операция завершена.',
+             ],
+         ],
+     ],
+     [
+         'id' => 'cesarean',
+         'title' => 'Кесарево сечение',
+-        'summary' => 'Случай назначается случайно. Неграфическая симуляция с акцентом на командную проверку, безопасность матери и передачу новорождённого профильной команде.',
++        'summary' => 'Помогите малышу появиться на свет. Перетащите нужные инструменты к пациентке в правильном порядке.',
+         'visual' => 'cesarean',
+-        'note' => 'Схема операционной и пеленального места. Изображений операции и тела нет.',
++        'note' => 'Пациентка в сознании под спинальной анестезией, ширма закрывает обзор. Видна только зона операции.',
++        'tools' => [
++            ['id' => 'retractor',     'name' => 'Ранорасширитель',   'icon' => 'retractor'],
++            ['id' => 'drill',         'name' => 'Хирургическая дрель','icon' => 'drill'],
++            ['id' => 'scalpel',       'name' => 'Скальпель',         'icon' => 'scalpel'],
++            ['id' => 'trocar',        'name' => 'Троакар',           'icon' => 'trocar'],
++            ['id' => 'needle_holder', 'name' => 'Иглодержатель с нитью', 'icon' => 'needle_holder'],
++            ['id' => 'antiseptic',    'name' => 'Антисептик',        'icon' => 'antiseptic'],
++            ['id' => 'saw',           'name' => 'Костная пила',      'icon' => 'saw'],
++            ['id' => 'cord_clamp',    'name' => 'Зажим для пуповины','icon' => 'cord_clamp'],
++        ],
+         'steps' => [
+             [
+-                'title' => 'Проверка пациентки и плана',
+-                'description' => 'Команда подтверждает личность пациентки, план вмешательства, согласие, аллергии и актуальную срочность.',
+-                'correct' => 'Сверить данные, согласие, аллергии и план с командой',
+-                'wrong' => ['Опираться только на устную информацию одного участника', 'Не уточнять срочность и согласие'],
+-                'note' => 'План и сведения о пациентке подтверждены всей командой.',
++                'tool' => 'antiseptic',
++                'title' => 'Обработка операционного поля',
++                'description' => 'Пациентка укрыта стерильным бельём, ширма закрывает ей обзор. Обработайте открытую зону.',
++                'note' => 'Поле обработано антисептиком.',
+             ],
+             [
+-                'title' => 'Распределение ролей',
+-                'description' => 'Подтвердите готовность акушерской, анестезиологической и неонатальной команд, а также каналы связи.',
+-                'correct' => 'Подтвердить роли и готовность всех профильных команд',
+-                'wrong' => ['Начать без подтверждения готовности неонатальной команды', 'Не договориться о способе передачи информации'],
+-                'note' => 'Команды знают роли и порядок взаимодействия.',
++                'tool' => 'scalpel',
++                'title' => 'Разрез',
++                'description' => 'Хирургу нужен аккуратный поперечный разрез внизу живота.',
++                'note' => 'Сделан аккуратный поперечный разрез.',
+             ],
+             [
+-                'title' => 'Готовность операционной',
+-                'description' => 'Проверьте мониторинг, стерильный набор, счёт инструментов и готовность команды к согласованному старту.',
+-                'correct' => 'Проверить мониторинг, стерильность и начальный счёт',
+-                'wrong' => ['Не проверять мониторинг перед началом', 'Отложить проверку стерильности'],
+-                'note' => 'Операционная готова по безопасному чек-листу.',
++                'tool' => 'retractor',
++                'title' => 'Расширение доступа',
++                'description' => 'Края раны нужно бережно развести и удерживать, чтобы освободить место для рук хирурга.',
++                'note' => 'Доступ расширен, хирург готов извлечь малыша.',
+             ],
+             [
+-                'title' => 'Командное ведение сценария',
+-                'description' => 'Действуйте по утверждённому плану и заранее согласуйте момент передачи новорождённого профильной команде.',
+-                'correct' => 'Следовать плану и обеспечить спокойную передачу новорождённого профильной команде',
+-                'wrong' => ['Оставить передачу без ответственного сотрудника', 'Менять план без согласования команды'],
+-                'note' => 'Передача новорождённого включена в общий план команды.',
++                'tool' => 'cord_clamp',
++                'title' => 'Рождение малыша',
++                'description' => 'Малыш родился! Перед передачей неонатологу нужно пережать пуповину.',
++                'note' => 'Пуповина пережата, малыш передан неонатологу.',
+             ],
+             [
+-                'title' => 'Завершение и восстановление',
+-                'description' => 'После сценария выполните финальный счёт и передачу пациентки и новорождённого командам восстановления.',
+-                'correct' => 'Завершить счёт и передать обоих с кратким отчётом',
+-                'wrong' => ['Ограничиться передачей только одному из пациентов', 'Завершить без документации и счёта'],
+-                'note' => 'Сценарий завершён: финальная проверка и передача выполнены.',
++                'tool' => 'needle_holder',
++                'title' => 'Ушивание',
++                'description' => 'Мама и малыш в порядке. Закройте разрез швами.',
++                'note' => 'Разрез ушит — операция завершена.',
+             ],
+         ],
+     ],
+diff --git a/operation.php b/operation.php
+index 67650f9..5eebcb9 100644
+--- a/operation.php
++++ b/operation.php
+@@ -5,6 +5,12 @@ require_once __DIR__ . '/includes/bootstrap.php';
+ $nick = current_nickname();
+ $operationScenarios = require __DIR__ . '/includes/operation_scenarios.php';
+ $scenario = $operationScenarios[random_int(0, count($operationScenarios) - 1)];
++// ?scenario=<id> — принудительный выбор сценария (удобно для тестов и демо на защите).
++if (isset($_GET['scenario']) && is_string($_GET['scenario'])) {
++    foreach ($operationScenarios as $candidate) {
++        if ($candidate['id'] === $_GET['scenario']) { $scenario = $candidate; break; }
++    }
++}
+ if ($nick === null) {
+     header('Location: index.php#cabinet');
+     exit;
+@@ -36,18 +42,42 @@ if ($player) {
+   <link rel="stylesheet" href="assets/css/pixel-theme.css?v=3.0">
+   <link rel="stylesheet" href="assets/css/operation-pixel.css?v=3.2">
+   <link rel="stylesheet" href="assets/css/story-dialogue.css?v=1.0">
++  <link rel="stylesheet" href="assets/css/operation-dnd.css?v=1.0">
+ </head>
+ <body class="operation-body">
+-<header class="op-hud"><a class="op-brand" href="index.php"><span>03</span><b><?= e($nick) ?></b></a><div class="op-hud__title">Случайная учебная операция</div><div class="op-hud__stats"><span>Время <b id="op-time">03:00</b></span><span>Счёт <b id="op-score">0</b></span><span>Точность <b id="op-rep">100</b></span></div></header>
++<header class="op-hud"><a class="op-brand" href="index.php"><span>03</span><b><?= e($nick) ?></b></a><div class="op-hud__title">Учебная операция · инструменты</div><div class="op-hud__stats"><span>Время <b id="op-time">03:00</b></span><span>Счёт <b id="op-score">0</b></span><span>Точность <b id="op-rep">100</b></span></div></header>
+ <main class="operation-main">
+   <section class="op-intro"><div><p class="op-kicker">Режим 02 · сценарий выпадает случайно</p><h1><?= e($scenario['title']) ?></h1><p><?= e($scenario['summary']) ?></p></div><a href="index.php#cabinet" class="op-back">← В личный кабинет</a></section>
+-  <section class="op-board" aria-live="polite">
+-    <aside class="op-patient"><div class="op-patient__label">Виртуальный тренажёр · случай выбран игрой</div><div class="arm-scene op-scene" id="arm-scene" aria-label="Схематичная неграфическая иллюстрация операции"></div><p class="op-patient__note" id="visual-note"><?= e($scenario['note']) ?></p><div class="op-checklist" id="op-checklist"></div></aside>
+-    <section class="op-work"><div class="op-step"><span id="op-step-number">Шаг 1 из 5</span><span class="op-safe">учебная симуляция</span></div><h2 id="op-question">Подготовка сценария</h2><p id="op-description">Действуйте по этапам и следуйте чек-листу команды.</p><div class="op-actions" id="op-actions"></div><p class="op-feedback" id="op-feedback" role="status"></p></section>
++  <section class="op-board op-board--dnd" aria-live="polite">
++    <aside class="op-patient">
++      <div class="op-patient__label">Операционный стол · пациент</div>
++      <div class="op-dropzone" id="op-dropzone" aria-label="Пациент: перетащите сюда инструмент">
++        <div class="op-dropzone__scene" id="arm-scene"></div>
++        <div class="op-dropzone__hint" id="op-drop-hint">Перетащите инструмент к пациенту</div>
++      </div>
++      <div class="op-vitals" id="op-vitals" aria-hidden="true">
++        <span class="op-vitals__heart">&#9829;</span><b id="op-hr">72</b><small>уд/мин</small>
++        <svg class="op-vitals__ecg" viewBox="0 0 120 24" preserveAspectRatio="none"><polyline points="0,14 18,14 22,14 25,6 28,20 31,2 34,18 37,14 60,14 64,14 67,6 70,20 73,2 76,18 79,14 120,14"/></svg>
++        <span>SpO&#8322; <b>98%</b></span>
++      </div>
++      <p class="op-patient__note" id="visual-note"><?= e($scenario['note']) ?></p>
++      <div class="op-checklist" id="op-checklist"></div>
++    </aside>
++    <section class="op-work">
++      <div class="op-step"><span id="op-step-number">Шаг 1 из 5</span><span class="op-safe">учебная симуляция</span></div>
++      <h2 id="op-question">Подготовка</h2>
++      <p id="op-description">Перетаскивайте инструменты со стола к пациенту в правильном порядке.</p>
++      <p class="op-feedback" id="op-feedback" role="status"></p>
++      <div class="op-table">
++        <div class="op-table__head"><span>Инструментальный стол</span><small id="op-table-count">8 предметов · нужны 5</small></div>
++        <div class="op-tray" id="op-tray"></div>
++        <p class="op-table__tip">Возьмите предмет мышкой или пальцем и отпустите над пациентом. Отпустите в другом месте — предмет вернётся на своё место.</p>
++      </div>
++    </section>
+   </section>
+ </main>
+ <div class="op-final" id="op-final" hidden><div class="op-final__card"><span id="op-final-label">Сценарий завершён</span><h2 id="op-final-title">Сценарий завершён</h2><p id="op-final-text">—</p><div class="op-final__stats"><div><span>Счёт</span><b id="op-final-score">0</b></div><div><span>Точность</span><b id="op-final-accuracy">0%</b></div><div><span>Награда</span><b id="op-final-reward">+90 ₽ · +50 XP</b></div></div><p id="op-final-save">Записываем результат…</p><div class="op-final__actions"><a class="op-button" id="op-again" href="operation.php?nick=<?= urlencode($nick) ?>">Ещё сценарий</a><a class="op-button op-button--flat" href="index.php#cabinet">В кабинет</a></div></div></div>
+ <script>window.OPERATION = <?= json_encode(['nick' => $nick, 'endpoint' => 'api/score.php', 'storyProgress' => $storyProgress, 'scenario' => $scenario], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;</script>
+ <script src="assets/js/story-dialogue.js?v=1.0"></script>
+-<script src="assets/js/operation.js?v=4.0"></script>
++<script src="assets/js/operation.js?v=5.0"></script>
+ </body></html>
+-- 
+2.47.3
+
+
+From 2c6ee77c4d6184cc466e325ce9ddc58ac2d2f9e6 Mon Sep 17 00:00:00 2001
+From: Arena Agent <agent@arena.ai>
+Date: Sat, 24 Oct 2026 19:04:00 +0000
+Subject: [PATCH 2/2] =?UTF-8?q?=D0=9E=D0=BF=D0=B5=D1=80=D0=B0=D1=86=D0=B8?=
+ =?UTF-8?q?=D1=8F:=20=D1=83=D0=BF=D1=80=D0=BE=D1=89=D0=B5=D0=BD=D0=B8?=
+ =?UTF-8?q?=D0=B5=20=E2=80=94=20=D1=83=D0=B1=D1=80=D0=B0=D0=BD=20=D1=81?=
+ =?UTF-8?q?=D0=BF=D0=B8=D1=81=D0=BE=D0=BA=20=D0=BF=D0=BE=D1=80=D1=8F=D0=B4?=
+ =?UTF-8?q?=D0=BA=D0=B0=20=D0=B4=D0=B5=D0=B9=D1=81=D1=82=D0=B2=D0=B8=D0=B9?=
+ =?UTF-8?q?=20=D0=B8=20=D0=BF=D0=BE=D0=B4=D1=81=D0=BA=D0=B0=D0=B7=D0=BA?=
+ =?UTF-8?q?=D0=B8,=20=D0=BA=D0=BE=D0=BC=D0=BF=D0=B0=D0=BA=D1=82=D0=BD?=
+ =?UTF-8?q?=D1=8B=D0=B9=20=D0=BC=D0=BE=D0=B1=D0=B8=D0=BB=D1=8C=D0=BD=D1=8B?=
+ =?UTF-8?q?=D0=B9=20=D1=8D=D0=BA=D1=80=D0=B0=D0=BD,=20=D0=B2=D1=8B=D0=B1?=
+ =?UTF-8?q?=D0=BE=D1=80=20=D0=BA=D0=B0=D1=81=D0=B0=D0=BD=D0=B8=D0=B5=D0=BC?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ assets/css/operation-dnd.css     | 100 ++++++++++--------------------
+ assets/js/operation.js           | 101 ++++++++++++++-----------------
+ includes/operation_scenarios.php |  21 ++++---
+ operation.php                    |  23 +++----
+ 4 files changed, 97 insertions(+), 148 deletions(-)
+
+diff --git a/assets/css/operation-dnd.css b/assets/css/operation-dnd.css
+index 827ceeb..c9b5e33 100644
+--- a/assets/css/operation-dnd.css
++++ b/assets/css/operation-dnd.css
+@@ -2,9 +2,9 @@
+ 
+ .op-board--dnd {
+   grid-template-columns: minmax(300px, .85fr) 1.15fr;
+-  min-height: 560px;
++  min-height: 520px;
+ }
+-.op-board--dnd .op-patient { display: flex; flex-direction: column; gap: 10px; padding: 18px; }
++.op-board--dnd .op-patient { display: flex; flex-direction: column; justify-content: center; padding: 18px; }
+ .op-board--dnd .op-work { padding: clamp(18px, 3vw, 32px); }
+ .op-board--dnd .op-work h2 { margin: 14px 0 6px; font-size: clamp(24px, 3.2vw, 34px); }
+ .op-board--dnd .op-feedback {
+@@ -31,7 +31,7 @@
+   user-select: none;
+ }
+ .op-dropzone__scene { display: block; line-height: 0; }
+-.patient-svg { display: block; width: 100%; height: auto; max-height: 380px; image-rendering: pixelated; }
++.patient-svg { display: block; width: 100%; height: auto; max-height: 470px; image-rendering: pixelated; }
+ .op-dropzone__hint {
+   position: absolute;
+   left: 8px; right: 8px; bottom: 8px;
+@@ -59,43 +59,17 @@ body.is-dragging-tool .op-dropzone__hint { color: #f0a95c; }
+ .op-dropzone.is-stopped .patient-target { display: none; }
+ .op-dropzone.is-stopped { border-color: #a4473d; }
+ 
+-/* ---------- Монитор показателей ---------- */
+-.op-vitals {
+-  display: flex; align-items: center; gap: 8px;
+-  padding: 6px 10px;
+-  border: 2px solid #142a2b;
+-  background: #050d0f;
+-  box-shadow: 2px 2px 0 #000;
+-  color: #7fd6b0;
+-  font-size: 13px;
+-}
+-.op-vitals b { font-size: 16px; color: #d6efe4; }
+-.op-vitals small { color: #60746d; font-size: 11px; }
+-.op-vitals__heart { color: #e2685a; animation: op-beat 1s steps(2) infinite; }
+-.op-vitals__ecg { flex: 1; height: 22px; min-width: 40px; }
+-.op-vitals__ecg polyline { fill: none; stroke: #7fd6b0; stroke-width: 2; stroke-dasharray: 260; stroke-dashoffset: 260; animation: op-ecg 1.6s linear infinite; }
+-.op-vitals.is-alert { border-color: #b07a3a; color: #f0a95c; }
+-.op-vitals.is-alert b { color: #f0a95c; }
+-.op-vitals.is-alert polyline { stroke: #f0a95c; animation-duration: .8s; }
+-.op-vitals.is-alert .op-vitals__heart { animation-duration: .45s; }
+-@keyframes op-beat { 50% { opacity: .35; } }
+-@keyframes op-ecg { to { stroke-dashoffset: 0; } }
++/* ---------- Прогресс этапов (без названий — не подсказка) ---------- */
++.op-progress { display: flex; gap: 5px; }
++.op-progress i { display: block; width: 22px; height: 8px; border: 1px solid #315450; background: #162a2e; box-shadow: 1px 1px 0 #000; }
++.op-progress i.is-current { border-color: #f0a95c; background: #8b673b; }
++.op-progress i.is-done { border-color: #7fd6b0; background: #3b8a6b; }
+ 
+-/* ---------- Порядок действий ---------- */
+-.op-board--dnd .op-checklist { margin-top: 0; gap: 5px; }
+-.op-seq__title { color: #60746d; font-size: 11px; text-transform: uppercase; letter-spacing: .1em; }
+-.op-board--dnd .op-check { gap: 8px; min-height: 30px; }
+-.op-board--dnd .op-check > span { flex: 1; display: flex; flex-direction: column; line-height: 1.25; }
+-.op-board--dnd .op-check small { color: #60746d; font-size: 11px; }
+-.op-check__tool {
+-  display: grid; place-items: center;
+-  width: 44px; height: 28px;
+-  border: 2px solid #142a2b;
+-  background: #081215;
+-  font-style: normal; color: #3a5550; font-size: 12px;
+-}
+-.op-check__tool .tool-svg { width: 38px; height: 24px; }
+-.op-check.is-done .op-check__tool { border-color: #3b8a6b; }
++/* Выбор касанием */
++.tray-slot.is-selected .tray-slot__place { border: 2px solid #f0a95c; background: rgba(240, 169, 92, .25); }
++.tray-slot.is-selected .tool { transform: translateY(-4px) scale(1.06); }
++.op-dropzone.is-armed { border-color: #f0a95c; cursor: pointer; }
++.op-dropzone.is-armed .op-dropzone__hint { color: #f0a95c; }
+ 
+ /* ---------- Инструментальный стол ---------- */
+ .op-table {
+@@ -113,7 +87,6 @@ body.is-dragging-tool .op-dropzone__hint { color: #f0a95c; }
+   color: #e8f0ea; font-size: 14px; text-transform: uppercase; letter-spacing: .08em;
+ }
+ .op-table__head small { color: #bfe3ee; font-size: 12px; text-transform: none; letter-spacing: 0; }
+-.op-table__tip { margin: 10px 0 0; color: #cfe9f1; font-size: 12px; line-height: 1.4; }
+ 
+ .op-tray {
+   display: grid;
+@@ -137,10 +110,6 @@ body.is-dragging-tool .op-dropzone__hint { color: #f0a95c; }
+ .tray-slot.is-lifted .tray-slot__ghost,
+ .tray-slot.is-used .tray-slot__ghost { opacity: .18; }
+ .tray-slot.is-used .tray-slot__ghost { inset: 4% 12% 28%; width: 76%; height: 68%; }
+-.tray-slot__num {
+-  position: absolute; top: 2px; left: 4px;
+-  color: rgba(220, 240, 246, .55); font-size: 10px; pointer-events: none;
+-}
+ .tray-slot__label {
+   min-height: 2.5em;
+   padding: 3px 4px;
+@@ -149,7 +118,8 @@ body.is-dragging-tool .op-dropzone__hint { color: #f0a95c; }
+   color: #1a2a2c;
+   font-size: 12px; line-height: 1.15; text-align: center;
+   box-shadow: 2px 2px 0 rgba(0, 0, 0, .55);
+-  overflow-wrap: anywhere;
++  overflow-wrap: break-word;
++  hyphens: auto; -webkit-hyphens: auto;
+ }
+ 
+ .tool {
+@@ -182,44 +152,38 @@ body.is-dragging-tool .op-dropzone__hint { color: #f0a95c; }
+   color: #7fd6b0; font-size: 11px; text-align: center;
+ }
+ .tray-slot.is-used .tray-slot__label { background: #b9d8c8; color: #355447; text-decoration: line-through; }
+-.tray-slot.is-hint .tray-slot__place { border-color: #f0a95c; border-style: solid; animation: op-hint 0.8s steps(2) infinite; }
+-@keyframes op-hint { 50% { background: rgba(240, 169, 92, .35); } }
+ @keyframes op-shake { 25% { translate: -4px 0; } 50% { translate: 4px 0; } 75% { translate: -3px 0; } }
+ 
+ body.is-dragging-tool, body.is-dragging-tool * { cursor: grabbing !important; }
+ 
+ @media (max-width: 980px) {
+-  .op-tray { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
++  .op-tray { gap: 7px; }
+   .tray-slot__label { font-size: 11px; }
+ }
+ @media (max-width: 760px) {
+-  /* На телефоне пациент стоит прямо над столом — тянуть предмет без скролла */
+-  .op-board--dnd { grid-template-columns: 1fr; gap: 10px; padding: 16px 14px; min-height: 0; }
++  /* Телефон: задача → пациент → стол, всё на одном экране без скролла */
++  .operation-main { padding-top: 12px; }
++  .op-intro { margin-bottom: 10px; }
++  .op-intro h1 { font-size: 22px; margin: 0; }
++  .op-intro .op-kicker, .op-intro p:not(.op-kicker), .op-back { display: none; }
++  .op-board--dnd { grid-template-columns: 1fr; gap: 8px; padding: 12px; min-height: 0; }
+   .op-board--dnd .op-patient,
+   .op-board--dnd .op-work { display: contents; }
+   .op-board--dnd .op-step { order: 1; }
+-  .op-board--dnd .op-work h2 { order: 2; margin: 0; font-size: 24px; }
+-  .op-board--dnd #op-description { order: 3; }
+-  .op-board--dnd .op-feedback { order: 4; margin: 0 !important; min-height: 0; }
+-  .op-board--dnd .op-patient__label { order: 5; }
+-  .op-board--dnd .op-dropzone { order: 6; }
+-  .op-board--dnd .op-table { order: 7; margin-top: 0; }
+-  .op-board--dnd .op-vitals { order: 8; }
+-  .op-board--dnd .op-patient__note { order: 9; min-height: 0; }
+-  .op-board--dnd .op-checklist { order: 10; }
+-  .patient-svg { max-height: 250px; margin: 0 auto; }
+-  .op-dropzone__hint { font-size: 11px; padding: 3px 6px; }
+-  .op-table__tip { display: none; }
++  .op-board--dnd .op-work h2 { order: 2; margin: 0; font-size: 21px; }
++  .op-board--dnd #op-description { order: 3; font-size: 14px; line-height: 1.4; }
++  .op-board--dnd .op-feedback { order: 4; margin: 0 !important; min-height: 0; padding: 7px 9px !important; }
++  .op-board--dnd .op-dropzone { order: 5; }
++  .op-board--dnd .op-table { order: 6; margin-top: 0; padding: 8px; }
++  .op-table__head { display: none; }
++  .patient-svg { max-height: 210px; margin: 0 auto; }
++  .op-dropzone__hint { font-size: 11px; padding: 3px 6px; bottom: 4px; }
++  .op-progress i { width: 16px; }
+ }
+ @media (max-width: 480px) {
+   .op-tray { gap: 5px; }
+-  .op-table { padding: 8px; }
+-  .op-table__head { font-size: 12px; }
+-  .op-table__head small { display: none; }
+   .tray-slot__label { font-size: 10px; min-height: 3.4em; padding: 2px; }
+-  .tray-slot__num { display: none; }
+   .tray-slot.is-used .tray-slot__place::after { content: '✓'; font-size: 14px; }
+ }
+ @media (prefers-reduced-motion: reduce) {
+-  .patient-target, .op-vitals__heart, .op-vitals__ecg polyline, .tray-slot.is-hint .tray-slot__place { animation: none; }
+-}
++  .patient-target { animation: none; }
+diff --git a/assets/js/operation.js b/assets/js/operation.js
+index da782fe..d81f3e7 100644
+--- a/assets/js/operation.js
++++ b/assets/js/operation.js
+@@ -7,7 +7,8 @@
+  *  - отпустил предмет мимо пациента / просто кликнул — предмет плавно возвращается на место;
+  *  - неверный инструмент или не тот порядок — штраф, предмет возвращается на место;
+  *  - верный — предмет «уходит» к пациенту, слот на столе помечается как использованный.
+- * Работает мышью, пальцем (Pointer Events) и с клавиатуры (Tab + Enter).
++ * Работает мышью, пальцем (Pointer Events), касанием «выбрал → нажал на пациента» и с клавиатуры (Tab + Enter).
++ * Подсказок нет: игрок видит только задачу текущего этапа.
+  */
+ (function () {
+   'use strict';
+@@ -24,22 +25,20 @@
+     correct: 100, cleanBonus: 20,          // +очки за верный шаг и бонус, если без ошибок на этом шаге
+     wrongTool: { score: 30, rep: 15, time: 8 },  // инструмент, которого нет в операции
+     wrongOrder: { score: 10, rep: 5, time: 3 },  // нужный инструмент, но не сейчас
+-    hintAfter: 2,                          // после N ошибок на шаге подсвечиваем верный предмет
+     dragThreshold: 4                       // px — меньше считается кликом
+   };
+ 
+   var state = {
+     index: 0, score: 0, rep: 100, mistakes: 0, stepMistakes: 0, attempts: 0,
+     remaining: RULES.time, finished: false, started: false, busy: false, timer: null, token: uuid(),
+-    used: {}, hr: 72, hrTimer: null
++    used: {}, selected: null
+   };
+ 
+   var el = {
+     time: byId('op-time'), score: byId('op-score'), rep: byId('op-rep'),
+     stepNumber: byId('op-step-number'), question: byId('op-question'), description: byId('op-description'),
+-    feedback: byId('op-feedback'), checklist: byId('op-checklist'), note: byId('visual-note'),
++    feedback: byId('op-feedback'), progress: byId('op-progress'),
+     scene: byId('arm-scene'), drop: byId('op-dropzone'), dropHint: byId('op-drop-hint'), tray: byId('op-tray'),
+-    hr: byId('op-hr'), vitals: byId('op-vitals'), tableCount: byId('op-table-count'),
+     final: byId('op-final'), finalLabel: byId('op-final-label'), finalTitle: byId('op-final-title'), finalText: byId('op-final-text'),
+     finalScore: byId('op-final-score'), finalAccuracy: byId('op-final-accuracy'), finalReward: byId('op-final-reward'), finalSave: byId('op-final-save')
+   };
+@@ -156,7 +155,7 @@
+ 
+   function setupScene() {
+     el.scene.innerHTML = patientSvg();
+-    el.note.textContent = scenario.note || 'Схематичный тренажёр, пациент укрыт стерильной простынёй.';
++    el.progress.innerHTML = steps.map(function () { return '<i></i>'; }).join('');
+   }
+   function showLayer(toolId) {
+     var g = el.scene.querySelector('[data-layer="' + toolId + '"]');
+@@ -173,12 +172,10 @@
+       return '<div class="tray-slot" data-slot="' + i + '" data-tool="' + esc(tool.id) + '">' +
+         '<div class="tray-slot__place">' + toolSvg(tool.icon, 'tray-slot__ghost') +
+           '<button type="button" class="tool" data-tool="' + esc(tool.id) + '" aria-label="' + esc(tool.name) + ': перетащите к пациенту или нажмите Enter">' + toolSvg(tool.icon) + '</button>' +
+-          '<span class="tray-slot__num">' + (i + 1) + '</span>' +
+         '</div>' +
+         '<span class="tray-slot__label">' + esc(tool.name) + '</span>' +
+       '</div>';
+     }).join('');
+-    el.tableCount.textContent = tools.length + ' предметов · нужны ' + steps.length;
+     Array.prototype.forEach.call(el.tray.querySelectorAll('.tool'), bindTool);
+   }
+ 
+@@ -220,8 +217,10 @@
+   function onUp(e) {
+     if (!drag || e.pointerId !== drag.id) return;
+     var d = endDrag();
+-    if (d.moved && isOverDrop(e.clientX, e.clientY)) applyTool(d.btn, d);
+-    else returnHome(d.btn); // кликнули или отпустили мимо — предмет возвращается на место
++    if (d.moved && isOverDrop(e.clientX, e.clientY)) { clearSelection(); applyTool(d.btn, d); return; }
++    returnHome(d.btn); // кликнули или отпустили мимо — предмет возвращается на место
++    if (!d.moved) toggleSelection(d.btn); // короткое касание — выбрать предмет (удобно на телефоне)
++    else clearSelection();
+   }
+   function onCancel(e) {
+     if (!drag || (e.pointerId !== undefined && e.pointerId !== drag.id)) return;
+@@ -240,6 +239,28 @@
+     el.drop.classList.remove('is-over');
+     return d;
+   }
++  /* Касание без перетаскивания: выбрать предмет, затем нажать на пациента. */
++  function toggleSelection(btn) {
++    if (state.selected === btn) { clearSelection(); return; }
++    clearSelection();
++    state.selected = btn;
++    btn.closest('.tray-slot').classList.add('is-selected');
++    el.drop.classList.add('is-armed');
++    el.dropHint.textContent = 'Нажмите на пациента';
++  }
++  function clearSelection() {
++    if (state.selected) state.selected.closest('.tray-slot').classList.remove('is-selected');
++    state.selected = null;
++    el.drop.classList.remove('is-armed');
++    if (!state.finished) el.dropHint.textContent = 'Перетащите инструмент сюда';
++  }
++  el.drop.addEventListener('click', function () {
++    if (!state.selected || !canInteract()) return;
++    var btn = state.selected;
++    clearSelection();
++    applyTool(btn, null);
++  });
++
+   function setTransform(btn, dx, dy, lifted) {
+     btn.style.transform = 'translate(' + dx + 'px,' + dy + 'px)' + (lifted ? ' scale(1.12) rotate(-6deg)' : '');
+   }
+@@ -293,11 +314,10 @@
+       state.used[id] = true;
+       flyToPatient(btn, d);
+       el.drop.classList.add('is-accepted');
+-      setFeedback('good', '✓ ' + tool.name + ' — верно! ' + step.note + ' +' + gained + ' очков.');
+-      el.note.textContent = step.note;
++      setFeedback('good', '✓ Верно! ' + step.note + ' +' + gained);
+       setTimeout(function () {
+         var slot = btn.closest('.tray-slot');
+-        slot.classList.remove('is-lifted', 'is-hint');
++        slot.classList.remove('is-lifted', 'is-selected');
+         slot.classList.add('is-used');
+         btn.disabled = true;
+         btn.tabIndex = -1;
+@@ -307,6 +327,7 @@
+         state.stepMistakes = 0;
+         state.busy = false;
+         renderHud();
++        renderProgress();
+         if (state.index >= steps.length) finish(true); else renderStep(true);
+       }, 520);
+       renderHud();
+@@ -322,45 +343,22 @@
+     state.rep = Math.max(0, state.rep - p.rep);
+     state.remaining = Math.max(0, state.remaining - p.time);
+     if (laterIndex > state.index) {
+-      setFeedback('warn', '«' + tool.name + '» понадобится, но позже. Сначала — «' + step.title.toLowerCase() + '». −' + p.score + ' очков, −' + p.time + ' сек.');
++      setFeedback('warn', '«' + tool.name + '» понадобится, но позже. −' + p.score + ' очков, −' + p.time + ' сек.');
+     } else {
+-      setFeedback('bad', '«' + tool.name + '» не нужен в этой операции. Он остаётся на столе. −' + p.score + ' очков, −' + p.rep + ' точности, −' + p.time + ' сек.');
++      setFeedback('bad', '«' + tool.name + '» не нужен в этой операции. −' + p.score + ' очков, −' + p.time + ' сек.');
+     }
+     el.drop.classList.add('is-rejected');
+     setTimeout(function () { el.drop.classList.remove('is-rejected'); }, 450);
+     returnHome(btn, true);
+-    bumpHeartRate(p === RULES.wrongTool ? 18 : 8);
+-    if (state.stepMistakes >= RULES.hintAfter) highlightHint();
+     renderHud();
+     if (state.rep <= 0 || state.remaining <= 0) setTimeout(function () { finish(false); }, 400);
+   }
+ 
+-  function highlightHint() {
+-    var slot = el.tray.querySelector('.tray-slot[data-tool="' + steps[state.index].tool + '"]');
+-    if (slot && !slot.classList.contains('is-hint')) {
+-      slot.classList.add('is-hint');
+-      el.dropHint.textContent = 'Подсказка: нужный инструмент мигает на столе';
+-    }
+-  }
+-
+   function setFeedback(kind, text) {
+     el.feedback.textContent = text;
+     el.feedback.className = 'op-feedback is-' + kind;
+   }
+ 
+-  function bumpHeartRate(delta) {
+-    state.hr = Math.min(130, state.hr + delta);
+-    el.vitals.classList.add('is-alert');
+-    renderVitals();
+-    clearInterval(state.hrTimer);
+-    state.hrTimer = setInterval(function () {
+-      state.hr = Math.max(72, state.hr - 2);
+-      renderVitals();
+-      if (state.hr <= 72) { clearInterval(state.hrTimer); el.vitals.classList.remove('is-alert'); }
+-    }, 400);
+-  }
+-  function renderVitals() { el.hr.textContent = state.hr; }
+-
+   /* ---------- Рендер ---------- */
+   function uuid() {
+     if (window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID();
+@@ -374,25 +372,19 @@
+     el.rep.textContent = state.rep;
+     el.time.classList.toggle('is-warning', state.remaining <= 45);
+   }
+-  function renderChecklist() {
+-    el.checklist.innerHTML = '<div class="op-seq__title">Порядок действий</div>' + steps.map(function (step, index) {
+-      var done = index < state.index, current = index === state.index && !state.finished;
+-      var tool = done ? toolById(step.tool) : null;
+-      return '<div class="op-check' + (done ? ' is-done' : '') + (current ? ' is-current' : '') + '">' +
+-        '<i>' + (done ? '✓' : String(index + 1).padStart(2, '0')) + '</i>' +
+-        '<span>' + esc(step.title) + (tool ? '<small>' + esc(tool.name) + '</small>' : '') + '</span>' +
+-        (tool ? '<em class="op-check__tool">' + toolSvg(tool.icon) + '</em>' : '<em class="op-check__tool is-empty">?</em>') +
+-      '</div>';
+-    }).join('');
++  function renderProgress() {
++    Array.prototype.forEach.call(el.progress.querySelectorAll('i'), function (tick, i) {
++      tick.classList.toggle('is-done', i < state.index);
++      tick.classList.toggle('is-current', i === state.index && !state.finished);
++    });
+   }
+   function renderStep(keepFeedback) {
+     var step = steps[state.index];
+     el.stepNumber.textContent = 'Шаг ' + (state.index + 1) + ' из ' + steps.length;
+     el.question.textContent = step.title;
+     el.description.textContent = step.description;
+-    el.dropHint.textContent = 'Перетащите нужный инструмент к пациенту';
+-    if (!keepFeedback) setFeedback('info', 'Выберите на столе инструмент для этого этапа и перетащите его к пациенту.');
+-    renderChecklist();
++    if (!keepFeedback) setFeedback('info', 'Перетащите нужный инструмент к пациенту.');
++    renderProgress();
+     renderHud();
+   }
+ 
+@@ -408,7 +400,8 @@
+     state.finished = true;
+     clearInterval(state.timer);
+     if (drag) returnHome(endDrag().btn);
+-    renderChecklist();
++    clearSelection();
++    renderProgress();
+     el.drop.classList.add(success ? 'is-complete' : 'is-stopped');
+     el.dropHint.textContent = success ? 'Операция завершена' : 'Операция остановлена';
+     if (success) state.score += Math.max(0, state.remaining); // бонус за оставшееся время
+@@ -468,13 +461,13 @@
+     if (!window.StoryDialogue || Number(progress.operations_finished) > 0) { startScenario(); return; }
+     window.StoryDialogue.showOnce('operation-dnd-briefing', [
+       { speaker: 'ilya', text: 'Сегодня ты ассистируешь хирургу. Слева — пациент под стерильной простынёй, справа — инструментальный стол.' },
+-      { speaker: 'ilya', text: 'Перетаскивай нужный инструмент к пациенту. На столе восемь предметов, а нужны только пять — и строго по порядку. Передумал — просто отпусти предмет, он вернётся на место.' }
++      { speaker: 'ilya', text: 'Перетаскивай нужный инструмент к пациенту. На столе восемь предметов, а нужны только пять — и строго по порядку. Передумал — просто отпусти предмет, он вернётся на место. На телефоне можно проще: нажми на предмет, потом на пациента.' }
+     ], { nickname: DATA.nick, title: 'Сюжет · тренировка с наставником' }).then(startScenario);
+   }
+ 
+   setupScene();
+   renderTray();
+-  renderChecklist();
++  renderProgress();
+   renderHud();
+   showTrainingBriefing();
+ })();
+diff --git a/includes/operation_scenarios.php b/includes/operation_scenarios.php
+index 66ccec7..be8c9f7 100644
+--- a/includes/operation_scenarios.php
++++ b/includes/operation_scenarios.php
+@@ -7,6 +7,7 @@
+  *           Из них 5 правильных, 3 — лишние (отвлекающие).
+  *   steps — 5 этапов строго по порядку; каждый этап требует один инструмент (tool = id).
+  *
++ * В длинных названиях стоит мягкий перенос \u{00AD} — чтобы подписи красиво переносились на телефоне.
+  * Иконки инструментов рисуются в assets/js/operation.js (TOOL_ICONS) по ключу icon.
+  * Чтобы добавить операцию — скопируйте блок, поменяйте tools/steps/visual.
+  * visual: appendectomy | cholecystectomy | cesarean | osteosynthesis (зона на схеме пациента).
+@@ -26,8 +27,8 @@ return [
+             ['id' => 'saw',           'name' => 'Костная пила',      'icon' => 'saw'],
+             ['id' => 'antiseptic',    'name' => 'Антисептик',        'icon' => 'antiseptic'],
+             ['id' => 'clip_applier',  'name' => 'Клипатор',          'icon' => 'clip_applier'],
+-            ['id' => 'drill',         'name' => 'Хирургическая дрель','icon' => 'drill'],
+-            ['id' => 'needle_holder', 'name' => 'Иглодержатель с нитью', 'icon' => 'needle_holder'],
++            ['id' => 'drill',         'name' => "Хи\u{00AD}рур\u{00AD}ги\u{00AD}чес\u{00AD}кая дрель",'icon' => 'drill'],
++            ['id' => 'needle_holder', 'name' => "Игло\u{00AD}дер\u{00AD}жа\u{00AD}тель с нитью", 'icon' => 'needle_holder'],
+             ['id' => 'cord_clamp',    'name' => 'Зажим для пуповины','icon' => 'cord_clamp'],
+             ['id' => 'trocar',        'name' => 'Троакар',           'icon' => 'trocar'],
+         ],
+@@ -73,12 +74,12 @@ return [
+         'tools' => [
+             ['id' => 'plate',         'name' => 'Пластина с винтами','icon' => 'plate'],
+             ['id' => 'trocar',        'name' => 'Троакар',           'icon' => 'trocar'],
+-            ['id' => 'needle_holder', 'name' => 'Иглодержатель с нитью', 'icon' => 'needle_holder'],
++            ['id' => 'needle_holder', 'name' => "Игло\u{00AD}дер\u{00AD}жа\u{00AD}тель с нитью", 'icon' => 'needle_holder'],
+             ['id' => 'scalpel',       'name' => 'Скальпель',         'icon' => 'scalpel'],
+-            ['id' => 'endobag',       'name' => 'Эндоконтейнер',     'icon' => 'endobag'],
++            ['id' => 'endobag',       'name' => "Эндо\u{00AD}кон\u{00AD}тей\u{00AD}нер",     'icon' => 'endobag'],
+             ['id' => 'antiseptic',    'name' => 'Антисептик',        'icon' => 'antiseptic'],
+             ['id' => 'laparoscope',   'name' => 'Лапароскоп',        'icon' => 'laparoscope'],
+-            ['id' => 'drill',         'name' => 'Хирургическая дрель','icon' => 'drill'],
++            ['id' => 'drill',         'name' => "Хи\u{00AD}рур\u{00AD}ги\u{00AD}чес\u{00AD}кая дрель",'icon' => 'drill'],
+         ],
+         'steps' => [
+             [
+@@ -122,8 +123,8 @@ return [
+         'tools' => [
+             ['id' => 'clip_applier',  'name' => 'Клипатор',          'icon' => 'clip_applier'],
+             ['id' => 'antiseptic',    'name' => 'Антисептик',        'icon' => 'antiseptic'],
+-            ['id' => 'mallet',        'name' => 'Ортопедический молоток', 'icon' => 'mallet'],
+-            ['id' => 'endobag',       'name' => 'Эндоконтейнер',     'icon' => 'endobag'],
++            ['id' => 'mallet',        'name' => "Орто\u{00AD}пе\u{00AD}ди\u{00AD}чес\u{00AD}кий молоток", 'icon' => 'mallet'],
++            ['id' => 'endobag',       'name' => "Эндо\u{00AD}кон\u{00AD}тей\u{00AD}нер",     'icon' => 'endobag'],
+             ['id' => 'trocar',        'name' => 'Троакар',           'icon' => 'trocar'],
+             ['id' => 'plate',         'name' => 'Пластина с винтами','icon' => 'plate'],
+             ['id' => 'laparoscope',   'name' => 'Лапароскоп',        'icon' => 'laparoscope'],
+@@ -169,11 +170,11 @@ return [
+         'visual' => 'cesarean',
+         'note' => 'Пациентка в сознании под спинальной анестезией, ширма закрывает обзор. Видна только зона операции.',
+         'tools' => [
+-            ['id' => 'retractor',     'name' => 'Ранорасширитель',   'icon' => 'retractor'],
+-            ['id' => 'drill',         'name' => 'Хирургическая дрель','icon' => 'drill'],
++            ['id' => 'retractor',     'name' => "Рано\u{00AD}рас\u{00AD}ши\u{00AD}ри\u{00AD}тель",   'icon' => 'retractor'],
++            ['id' => 'drill',         'name' => "Хи\u{00AD}рур\u{00AD}ги\u{00AD}чес\u{00AD}кая дрель",'icon' => 'drill'],
+             ['id' => 'scalpel',       'name' => 'Скальпель',         'icon' => 'scalpel'],
+             ['id' => 'trocar',        'name' => 'Троакар',           'icon' => 'trocar'],
+-            ['id' => 'needle_holder', 'name' => 'Иглодержатель с нитью', 'icon' => 'needle_holder'],
++            ['id' => 'needle_holder', 'name' => "Игло\u{00AD}дер\u{00AD}жа\u{00AD}тель с нитью", 'icon' => 'needle_holder'],
+             ['id' => 'antiseptic',    'name' => 'Антисептик',        'icon' => 'antiseptic'],
+             ['id' => 'saw',           'name' => 'Костная пила',      'icon' => 'saw'],
+             ['id' => 'cord_clamp',    'name' => 'Зажим для пуповины','icon' => 'cord_clamp'],
+diff --git a/operation.php b/operation.php
+index 5eebcb9..fad0b7f 100644
+--- a/operation.php
++++ b/operation.php
+@@ -42,36 +42,27 @@ if ($player) {
+   <link rel="stylesheet" href="assets/css/pixel-theme.css?v=3.0">
+   <link rel="stylesheet" href="assets/css/operation-pixel.css?v=3.2">
+   <link rel="stylesheet" href="assets/css/story-dialogue.css?v=1.0">
+-  <link rel="stylesheet" href="assets/css/operation-dnd.css?v=1.0">
++  <link rel="stylesheet" href="assets/css/operation-dnd.css?v=2.0">
+ </head>
+ <body class="operation-body">
+ <header class="op-hud"><a class="op-brand" href="index.php"><span>03</span><b><?= e($nick) ?></b></a><div class="op-hud__title">Учебная операция · инструменты</div><div class="op-hud__stats"><span>Время <b id="op-time">03:00</b></span><span>Счёт <b id="op-score">0</b></span><span>Точность <b id="op-rep">100</b></span></div></header>
+ <main class="operation-main">
+-  <section class="op-intro"><div><p class="op-kicker">Режим 02 · сценарий выпадает случайно</p><h1><?= e($scenario['title']) ?></h1><p><?= e($scenario['summary']) ?></p></div><a href="index.php#cabinet" class="op-back">← В личный кабинет</a></section>
++  <section class="op-intro"><div><p class="op-kicker">Учебная операция · сценарий выпадает случайно</p><h1><?= e($scenario['title']) ?></h1><p>Перетащите нужные инструменты со стола к пациенту в правильном порядке. Лишние оставьте на столе.</p></div><a href="index.php#cabinet" class="op-back">← В кабинет</a></section>
+   <section class="op-board op-board--dnd" aria-live="polite">
+     <aside class="op-patient">
+-      <div class="op-patient__label">Операционный стол · пациент</div>
+       <div class="op-dropzone" id="op-dropzone" aria-label="Пациент: перетащите сюда инструмент">
+         <div class="op-dropzone__scene" id="arm-scene"></div>
+-        <div class="op-dropzone__hint" id="op-drop-hint">Перетащите инструмент к пациенту</div>
++        <div class="op-dropzone__hint" id="op-drop-hint">Перетащите инструмент сюда</div>
+       </div>
+-      <div class="op-vitals" id="op-vitals" aria-hidden="true">
+-        <span class="op-vitals__heart">&#9829;</span><b id="op-hr">72</b><small>уд/мин</small>
+-        <svg class="op-vitals__ecg" viewBox="0 0 120 24" preserveAspectRatio="none"><polyline points="0,14 18,14 22,14 25,6 28,20 31,2 34,18 37,14 60,14 64,14 67,6 70,20 73,2 76,18 79,14 120,14"/></svg>
+-        <span>SpO&#8322; <b>98%</b></span>
+-      </div>
+-      <p class="op-patient__note" id="visual-note"><?= e($scenario['note']) ?></p>
+-      <div class="op-checklist" id="op-checklist"></div>
+     </aside>
+     <section class="op-work">
+-      <div class="op-step"><span id="op-step-number">Шаг 1 из 5</span><span class="op-safe">учебная симуляция</span></div>
++      <div class="op-step"><span id="op-step-number">Шаг 1 из 5</span><span class="op-progress" id="op-progress" aria-hidden="true"></span></div>
+       <h2 id="op-question">Подготовка</h2>
+-      <p id="op-description">Перетаскивайте инструменты со стола к пациенту в правильном порядке.</p>
++      <p id="op-description">Перетаскивайте инструменты со стола к пациенту.</p>
+       <p class="op-feedback" id="op-feedback" role="status"></p>
+       <div class="op-table">
+-        <div class="op-table__head"><span>Инструментальный стол</span><small id="op-table-count">8 предметов · нужны 5</small></div>
++        <div class="op-table__head"><span>Инструментальный стол</span></div>
+         <div class="op-tray" id="op-tray"></div>
+-        <p class="op-table__tip">Возьмите предмет мышкой или пальцем и отпустите над пациентом. Отпустите в другом месте — предмет вернётся на своё место.</p>
+       </div>
+     </section>
+   </section>
+@@ -79,5 +70,5 @@ if ($player) {
+ <div class="op-final" id="op-final" hidden><div class="op-final__card"><span id="op-final-label">Сценарий завершён</span><h2 id="op-final-title">Сценарий завершён</h2><p id="op-final-text">—</p><div class="op-final__stats"><div><span>Счёт</span><b id="op-final-score">0</b></div><div><span>Точность</span><b id="op-final-accuracy">0%</b></div><div><span>Награда</span><b id="op-final-reward">+90 ₽ · +50 XP</b></div></div><p id="op-final-save">Записываем результат…</p><div class="op-final__actions"><a class="op-button" id="op-again" href="operation.php?nick=<?= urlencode($nick) ?>">Ещё сценарий</a><a class="op-button op-button--flat" href="index.php#cabinet">В кабинет</a></div></div></div>
+ <script>window.OPERATION = <?= json_encode(['nick' => $nick, 'endpoint' => 'api/score.php', 'storyProgress' => $storyProgress, 'scenario' => $scenario], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;</script>
+ <script src="assets/js/story-dialogue.js?v=1.0"></script>
+-<script src="assets/js/operation.js?v=5.0"></script>
++<script src="assets/js/operation.js?v=5.1"></script>
+ </body></html>
+-- 
+2.47.3
+

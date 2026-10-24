@@ -87,7 +87,7 @@
         '<div class="cabinet-panel cabinet-games"><div class="cabinet-panel__head"><div><p>Игровые режимы</p><h3>Выбери задание</h3></div></div>' +
           '<div class="game-mode-grid">' +
             '<a class="game-mode" href="game.php?nick=' + encodeURIComponent(nick) + '"><span class="game-mode__icon">' + pixelIcon('ambulance') + '</span><span><b>Ночная смена</b><small>12 пациентов · диагноз и порядок лечения</small></span><i>Играть →</i></a>' +
-            '<a class="game-mode game-mode--operation" href="operation.php?nick=' + encodeURIComponent(nick) + '"><span class="game-mode__icon">' + pixelIcon('bandage') + '</span><span><b>Учебная операция</b><small>4 операции · случайный выбор игрой · без графических сцен</small></span><i>Оперировать →</i></a>' +
+            '<a class="game-mode game-mode--operation" href="operation.php?nick=' + encodeURIComponent(nick) + '"><span class="game-mode__icon">' + pixelIcon('bandage') + '</span><span><b>Учебная операция</b><small>4 операции · подай инструменты в нужном порядке</small></span><i>Оперировать →</i></a>' +
           '</div>' +
           '<div class="daily-mission ' + progress + '"><span>Миссия дня</span><b>' + esc(modeGoal) + '</b><small>' + (p.operations_success > 0 ? 'Выполнено: опыт и бюджет уже начислены.' : 'Успех даст +90 ₽ и +50 XP. Ошибки не сбрасывают прогресс.') + '</small></div>' +
         '</div>' +

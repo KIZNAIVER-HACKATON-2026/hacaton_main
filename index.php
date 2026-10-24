@@ -31,7 +31,7 @@ $backgroundTier = $rank >= 1 && $rank <= 3 ? $rank : 4;
   <title>Смена 03 — учебный симулятор фельдшера</title>
   <meta name="description" content="Учебный симулятор ночной смены, операций и развития больницы.">
   <link rel="preload" as="image" href="assets/img/fon_main.webp" type="image/webp">
-  <link rel="stylesheet" href="assets/css/main.css?v=3.1">
+  <link rel="stylesheet" href="assets/css/main.css?v=3.2">
   <link rel="stylesheet" href="assets/css/cabinet.css?v=3.0">
   <link rel="stylesheet" href="assets/css/pixel-theme.css?v=3.0">
   <link rel="stylesheet" href="assets/css/readability.css?v=3.0">
@@ -55,7 +55,7 @@ $backgroundTier = $rank >= 1 && $rank <= 3 ? $rank : 4;
       <a class="brand" href="index.php" aria-label="Смена 03 — на главную"><span class="brand__mark">03</span><span class="brand__text"><span class="brand__name">Смена <b>03</b></span><span class="brand__tag">учебная скорая помощь</span></span></a>
       <nav class="topbar__nav" aria-label="Основная навигация">
         <a class="topbar__link" href="#cabinet">Личный кабинет</a>
-        <a class="topbar__link" href="#top">Рекорды</a>
+        <button class="topbar__link" type="button" data-leaderboard-open aria-haspopup="dialog" aria-controls="top" aria-expanded="false">Рекорды</button>
         <a class="topbar__link" href="rules.php">Правила</a>
         <span class="dbpill<?= $dbOk ? '' : ' is-off' ?>"><span class="dbpill__dot" aria-hidden="true"></span><?= $dbOk ? 'БД подключена' : 'БД offline' ?></span>
       </nav>
@@ -77,20 +77,6 @@ $backgroundTier = $rank >= 1 && $rank <= 3 ? $rank : 4;
         </div>
         <div class="menu__meta"><span class="chip"><svg class="ico" aria-hidden="true"><use href="#i-clock"/></svg> Смена <b>05:00</b></span><span class="chip"><svg class="ico" aria-hidden="true"><use href="#i-pulse"/></svg> Диагнозов в базе <b><?= count($diagnoses) ?></b></span><span class="chip<?= $stats['shifts'] === 0 ? ' is-empty' : '' ?>"><svg class="ico" aria-hidden="true"><use href="#i-flag"/></svg> Смен сдано <b><?= num_ru($stats['shifts']) ?></b></span></div>
       </section>
-
-      <aside class="board" id="top" aria-labelledby="board-title">
-        <div class="board__head"><h2 class="board__title" id="board-title">Топ смен</h2><span class="board__live"><i aria-hidden="true"></i> live</span></div>
-        <?php if (empty($top)): ?>
-          <div class="board__empty"><svg class="board__empty-ico" aria-hidden="true"><use href="#i-trophy"/></svg>Пока никто не сдал смену.<br>Твой ник будет первым в таблице.</div>
-        <?php else: ?>
-          <ol class="board__list">
-            <?php foreach ($top as $row): $rCls = 'rank' . ($row['rank'] <= 3 ? ' rank--' . $row['rank'] : ''); ?>
-              <li class="<?= $rCls ?>"><span class="rank__medal" aria-hidden="true"><?= str_pad((string) $row['rank'], 2, '0', STR_PAD_LEFT) ?></span><span class="rank__who"><span class="rank__nick"><?= e($row['nickname']) ?></span><span class="rank__when"><?= e(fmt_shift_date($row['finished_at'])) ?></span></span><span class="rank__score"><?= num_ru($row['score']) ?><small>очк</small></span></li>
-            <?php endforeach; ?>
-          </ol>
-        <?php endif; ?>
-        <p class="board__rank-note">Фон больницы меняется только у мест 1–3. Места 4+ используют базовую подстанцию.</p>
-      </aside>
     </main>
 
     <section class="cabinet" id="cabinet" aria-labelledby="cabinet-title">
@@ -128,9 +114,35 @@ $backgroundTier = $rank >= 1 && $rank <= 3 ? $rank : 4;
     <?php endif; ?>
 
     <section class="stats" aria-label="Статистика по базе"><div class="wrap"><div class="stats__grid"><div class="stat"><span class="stat__label">Игроков</span><span class="stat__value"><?= num_ru($stats['players']) ?></span></div><div class="stat"><span class="stat__label">Смен сдано</span><span class="stat__value"><?= num_ru($stats['shifts']) ?></span></div><div class="stat"><span class="stat__label">Рекорд</span><span class="stat__value"><?= $stats['best'] > 0 ? num_ru($stats['best']) : '—' ?><small><?= $stats['best'] > 0 ? 'очк' : '' ?></small></span></div><div class="stat"><span class="stat__label">Средний счёт</span><span class="stat__value"><?= $stats['avg'] > 0 ? num_ru($stats['avg']) : '—' ?></span></div></div></div></section>
-    <footer class="foot wrap"><span>Смена 03 · учебный симулятор профессии</span><span class="foot__links"><a href="rules.php">Правила</a><a href="#cabinet">Личный кабинет</a><a href="#top">Топ смен</a></span><span>Без графических сцен · только учебные сценарии</span></footer>
+    <footer class="foot wrap"><span>Смена 03 · учебный симулятор профессии</span><span class="foot__links"><a href="rules.php">Правила</a><a href="#cabinet">Личный кабинет</a><button type="button" data-leaderboard-open aria-haspopup="dialog" aria-controls="top" aria-expanded="false">Топ смен</button></span><span>Без графических сцен · только учебные сценарии</span></footer>
   </div>
 </div>
+<dialog class="leaderboard-modal" id="top" aria-modal="true" aria-labelledby="board-title" aria-describedby="board-description">
+  <section class="board board--modal">
+    <header class="board__head">
+      <h2 class="board__title" id="board-title">Топ смен</h2>
+      <div class="board__head-actions">
+        <span class="board__live"><i aria-hidden="true"></i> live</span>
+        <button class="board__close" type="button" data-leaderboard-close aria-label="Закрыть топ смен" autofocus>×</button>
+      </div>
+    </header>
+    <div class="board__body" tabindex="0">
+      <p class="board__description" id="board-description">Пять лучших результатов — по одной смене на игрока.</p>
+      <div class="board__empty"<?= empty($top) ? '' : ' hidden' ?>><svg class="board__empty-ico" aria-hidden="true"><use href="#i-trophy"/></svg>Пока никто не сдал смену.<br>Твой ник будет первым в таблице.</div>
+      <ol class="board__list"<?= empty($top) ? ' hidden' : '' ?>>
+        <?php foreach ($top as $row): $rCls = 'rank' . ($row['rank'] <= 3 ? ' rank--' . $row['rank'] : ''); ?>
+          <li class="<?= $rCls ?>"><span class="rank__medal" aria-hidden="true"><?= str_pad((string) $row['rank'], 2, '0', STR_PAD_LEFT) ?></span><span class="rank__who"><span class="rank__nick"><?= e($row['nickname']) ?></span><span class="rank__when"><?= e(fmt_shift_date($row['finished_at'])) ?></span></span><span class="rank__score"><?= num_ru($row['score']) ?><small>очк</small></span></li>
+        <?php endforeach; ?>
+      </ol>
+      <p class="board__rank-note">Фон больницы меняется только у мест 1–3. Места 4+ используют базовую подстанцию.</p>
+    </div>
+    <footer class="board__actions">
+      <span>Esc — закрыть окно</span>
+      <button class="board__dismiss" type="button" data-leaderboard-close>Закрыть</button>
+    </footer>
+  </section>
+</dialog>
 <script>window.CABINET = <?= json_encode(['nick' => $nick, 'dashboard' => $dashboard, 'equipment' => progression_equipment(), 'hospitalLevels' => progression_hospital_levels(), 'encyclopedia' => $encyclopedia], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;</script>
+<script src="assets/js/leaderboard.js?v=1.0"></script>
 <script src="assets/js/cabinet.js?v=3.4"></script>
 </body></html>

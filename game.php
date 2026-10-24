@@ -269,6 +269,6 @@ window.SHIFT = <?= json_encode([
 </script>
 <script src="assets/js/pixel-art.js?v=2.3"></script>
 <script src="assets/js/story-dialogue.js?v=1.0"></script>
-<script src="assets/js/shift.js?v=3.2"></script>
+<script src="assets/js/shift.js?v=3.3"></script>
 </body>
 </html>

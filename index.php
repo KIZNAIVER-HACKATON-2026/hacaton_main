@@ -33,6 +33,8 @@ $shiftMinutes = 5;
 
   <link rel="preload" as="image" href="assets/img/fon_main.webp" type="image/webp">
   <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/pixel-theme.css">
+  <link rel="stylesheet" href="assets/css/readability.css">
 </head>
 <body class="landing" data-db="<?= $dbOk ? '1' : '0' ?>">
 

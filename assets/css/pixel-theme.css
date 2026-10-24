@@ -1,0 +1,143 @@
+/*
+ * Unified pixel-art UI theme for Смена 03.
+ * Pixellari is self-hosted and includes the full Russian alphabet, avoiding mixed-font glyphs.
+ */
+@font-face {
+  font-family: "Pixellari";
+  src: url("../fonts/pixellari.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+
+:root {
+  --pixel-font: "Pixellari", "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  --readable-font: "Pixellari", "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  --pixel-edge: rgba(127, 214, 176, .52);
+  --pixel-shadow: 4px 4px 0 rgba(0, 0, 0, .52);
+  --pixel-amber: #f0a95c;
+  --text-dim: #d0ddd7;
+  --muted: #afc2b9;
+  --faint: #93a99f;
+  --gp-dim: #d0ddd7;
+  --gp-muted: #afc2b9;
+  --gp-faint: #93a99f;
+  --font: var(--readable-font);
+  --mono: "Pixellari", "SFMono-Regular", Consolas, monospace;
+}
+
+/* Pixel lettering is the base typeface for every screen and control. */
+body, body.game-body {
+  font-family: var(--readable-font) !important;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+:where(.menu__title, .rules-title, .brand__mark, .brand__name, .work__title,
+  .modal__title, .final__title, .patient-name, .pcard__name, .section-title,
+  .rules-block h2) {
+  font-family: var(--pixel-font) !important;
+  font-synthesis: weight;
+}
+
+/* A restrained pixel grid ties the UI to the game's night-shift backdrop. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+  opacity: .045;
+  background-image:
+    linear-gradient(rgba(127, 214, 176, .35) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(127, 214, 176, .35) 1px, transparent 1px);
+  background-size: 16px 16px;
+  mix-blend-mode: screen;
+}
+
+/* Hard-edged panels, square pixels and a subtle offset shadow. */
+:where(.board, .modal__card, .pcard, .work, .call, .patient-card, .rules-block, .card) {
+  border-radius: 3px !important;
+  border-color: var(--pixel-edge) !important;
+  box-shadow: var(--pixel-shadow), inset 0 1px 0 rgba(190, 235, 220, .08) !important;
+}
+
+/* All interactive surfaces share the same beveled, block-like treatment. */
+:where(.btn, .btn-primary, .btn-ghost, .btn-play, .btn-solid, .btn-flat,
+  .hud__btn, .diag-btn, .treat-btn, .call-opt, .modal__close,
+  input, select, textarea, .input) {
+  border-radius: 2px !important;
+}
+
+:where(.btn, .btn-primary, .btn-ghost, .btn-play, .btn-solid, .btn-flat,
+  .hud__btn, .diag-btn, .treat-btn, .call-opt, .modal__close) {
+  border-width: 2px;
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, .48);
+}
+
+:where(.btn:hover, .btn-primary:hover, .btn-ghost:hover, .btn-play:hover,
+  .btn-solid:hover, .btn-flat:hover, .hud__btn:hover, .diag-btn:hover,
+  .treat-btn:hover, .call-opt:hover) {
+  transform: translate(-1px, -1px);
+}
+
+/* Nickname field and any future form controls. */
+:where(input:not([type="checkbox"]):not([type="radio"]), select, textarea, .input) {
+  min-height: 46px;
+  border: 2px solid rgba(127, 214, 176, .38) !important;
+  border-radius: 2px !important;
+  background-color: rgba(5, 9, 13, .86) !important;
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, .035), 3px 3px 0 rgba(0, 0, 0, .45);
+}
+:where(input, select, textarea, .input)::placeholder { color: #789188 !important; opacity: 1; }
+:where(input, select, textarea, .input):focus {
+  border-color: var(--pixel-amber) !important;
+  outline: 2px solid rgba(240, 169, 92, .24);
+  outline-offset: 2px;
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, .04), 3px 3px 0 rgba(0, 0, 0, .45) !important;
+}
+
+/* Block treatment for diagnosis, treatment and dispatcher choices. */
+:where(.diag-btn, .treat-btn, .call-opt) {
+  border-color: rgba(127, 176, 160, .32) !important;
+  background-image: linear-gradient(180deg, rgba(29, 43, 49, .96), rgba(12, 20, 26, .98));
+}
+:where(.diag-btn:hover:not(:disabled), .treat-btn:hover:not(:disabled), .call-opt:hover:not(:disabled)) {
+  border-color: var(--pixel-amber) !important;
+}
+.diag-btn.is-correct, .diag-btn.correct {
+  border-color: var(--primary, #7fd6b0) !important;
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, .48), inset 0 0 0 2px rgba(127, 214, 176, .12) !important;
+}
+.diag-btn.is-wrong, .diag-btn.wrong {
+  border-color: #e2685a !important;
+}
+
+/* Square chips and status tags; keep circular avatars/indicators untouched. */
+:where(.symptom, .chip, .flow__step, .dbpill, .player-tag, .hero-badge,
+  .final__badge, .resume, .resume__cell, .vital, .modal__cell, .treat-slot,
+  .toast, .rank__medal, .board__live) {
+  border-radius: 2px !important;
+}
+:where(.field__label, .field__hint, .resume__head, .vital-label, .pcard__h,
+  .hud__label, .call__label, .modal__eyebrow, .final__score-label) {
+  letter-spacing: .08em;
+}
+
+/* Keep emoji artwork rendered by the system emoji font, not as missing glyphs. */
+:where(.patient-avatar, .pcard__avatar, .diag-icon) {
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Segoe UI Symbol", sans-serif !important;
+}
+
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--pixel-amber);
+  outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+  :root { --pixel-shadow: 3px 3px 0 rgba(0, 0, 0, .52); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body::after { display: none; }
+}

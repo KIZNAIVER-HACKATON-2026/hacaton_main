@@ -1,0 +1,80 @@
+/* Readability pass: preserve the pixel-art mood while giving glyphs more detail. */
+:root {
+  --text: #f0f5f2;
+  --gp-text: #f0f5f2;
+  --pixel-edge: rgba(127, 214, 176, .58);
+}
+
+/* One full-Cyrillic pixel font for all text and controls; never mix fallback glyphs. */
+body, body *, body *::before, body *::after {
+  font-family: var(--pixel-font) !important;
+  font-synthesis: weight;
+}
+body, body.game-body {
+  font-size: 17px !important;
+  line-height: 1.6 !important;
+  -webkit-font-smoothing: auto;
+  text-rendering: optimizeLegibility;
+}
+.patient-avatar, .pcard__avatar, .diag-icon {
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Segoe UI Symbol", sans-serif !important;
+}
+
+/* Main copy and controls: slightly larger so the pixel grid has more physical pixels. */
+:where(.menu__lead, .rules-subtitle, .rules-block p, .rules-list,
+  .patient-meta, .work__sub, .call__text, .call-opt__label,
+  .modal__sub, .hint, .rules-table td, .rules-note, .board__empty,
+  .recent__row, .pcard__age, .symptom, .diag-label, .diag-btn,
+  .treat-btn, .call-opt, .btn, .btn-play, .btn-solid, .btn-flat,
+  .final__sub, .final__save, .resume__note) {
+  font-size: 17px !important;
+  line-height: 1.6 !important;
+}
+
+/* Status labels and metadata remain compact, but no longer tiny. */
+:where(.menu__kicker, .brand__tag, .flow__step, .btn-play__hint, .chip,
+  .dbpill, .topbar__link, .board__title, .board__live, .rank__nick,
+  .rank__score, .rank__score small, .rank__medal, .board__foot-title,
+  .recent__when, .recent__score, .stat__label, .foot, .foot kbd, .rules-table th,
+  .modal__eyebrow, .field__label, .field__hint, .field__count, .resume__head,
+  .resume__cell span, .modal__note, .hero-badge, .vital-label, .pcard__case,
+  .pcard__h, .hud__label, .call__label, .call-opt__meta, .final__badge,
+  .modal__cell span, .final__score-label, .player-tag) {
+  font-size: 15px !important;
+  line-height: 1.5 !important;
+  letter-spacing: .025em !important;
+}
+
+:where(.field__label, .pcard__case, .pcard__h, .hud__label, .call__label,
+  .modal__eyebrow, .resume__head, .vital-label, .stat__label, .board__title,
+  .board__live, .rank__when, .board__foot-title, .brand__tag, .menu__kicker,
+  .field__hint, .field__count, .modal__note, .call-opt__meta, .rules-table th,
+  .rules-note, .pcard__age, .player-tag) {
+  color: #b7c9c1 !important;
+}
+
+/* Keep score tiles and form contents crisp at small sizes too. */
+:where(.brand__name, .modal__cell b, .resume__cell b) { font-size: 17px !important; }
+.rules-block p, .rules-list li { margin-bottom: 12px; }
+.rules-table th, .rules-table td { padding-top: 12px; padding-bottom: 12px; }
+.field__hint { gap: 12px; }
+.input, input, select, textarea { font-size: 17px !important; }
+
+@media (max-width: 600px) {
+  body, body.game-body { font-size: 16px !important; }
+  :where(.menu__lead, .rules-subtitle, .rules-block p, .rules-list,
+    .patient-meta, .work__sub, .call__text, .modal__sub, .hint,
+    .rules-table td, .board__empty, .diag-btn, .treat-btn, .call-opt,
+    .final__sub, .final__save, .resume__note) {
+    font-size: 15.5px !important;
+  }
+  :where(.menu__kicker, .brand__tag, .flow__step, .btn-play__hint, .chip,
+    .dbpill, .topbar__link, .board__title, .board__live, .rank__when,
+    .stat__label, .foot, .field__label, .field__hint, .field__count,
+    .resume__head, .vital-label, .pcard__case, .pcard__h, .hud__label,
+    .call__label, .call-opt__meta, .final__badge, .modal__cell span,
+    .player-tag) {
+    font-size: 14.5px !important;
+  }
+  :where(.brand__name, .modal__cell b, .resume__cell b) { font-size: 16px !important; }
+}

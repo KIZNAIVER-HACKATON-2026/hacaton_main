@@ -22,6 +22,8 @@ $gameUrl = 'game.php' . ($nick !== null ? '?nick=' . urlencode($nick) : '');
   <title>Правила — Смена 03</title>
   <link rel="stylesheet" href="assets/css/base.css">
   <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/pixel-theme.css">
+  <link rel="stylesheet" href="assets/css/readability.css">
 </head>
 <body>
 

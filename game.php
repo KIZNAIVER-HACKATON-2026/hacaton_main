@@ -38,6 +38,8 @@ if ($nick !== null) {
   <title>Смена — Смена 03</title>
   <link rel="stylesheet" href="assets/css/base.css">
   <link rel="stylesheet" href="assets/css/game.css">
+  <link rel="stylesheet" href="assets/css/pixel-theme.css">
+  <link rel="stylesheet" href="assets/css/readability.css">
 </head>
 <body class="game-body">
 

@@ -9,6 +9,8 @@ $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
   <title>Лечение — Смена 03</title>
   <link rel="stylesheet" href="assets/css/base.css">
   <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/pixel-theme.css">
+  <link rel="stylesheet" href="assets/css/readability.css">
 </head>
 <body>
 <main class="patient-page">

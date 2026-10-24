@@ -38,6 +38,29 @@
     token: uuid()
   };
 
+  /* ---------------- сюжет «Вернуться на линию» ---------------- */
+
+  var STORY = (window.StoryLine && DATA.story) ? window.StoryLine.init(DATA.story, { nick: NICK, endpoint: ENDPOINTS.story }) : null;
+  var EPISODE = STORY ? STORY.currentEpisode() : null;
+  var storyChoice = null;      // индекс варианта сюжетного звонка
+  var storyFlagsShift = [];    // флаги, выбранные в этой смене
+
+  if (EPISODE) {
+    // Сюжетный пациент (финал) подменяет обычного по индексу.
+    if (EPISODE.patient && EPISODE.patient.data && EPISODE.patient.index < PATIENTS.length) {
+      PATIENTS[EPISODE.patient.index] = EPISODE.patient.data;
+    }
+    // Сюжетный звонок встаёт в общую очередь по afterIndex.
+    if (EPISODE.call) {
+      var storyCall = {};
+      Object.keys(EPISODE.call).forEach(function (k) { storyCall[k] = EPISODE.call[k]; });
+      storyCall.story = true;
+      storyCall.text = STORY.text(EPISODE.call.text);
+      S.callQueue.push(storyCall);
+      S.callQueue.sort(function (a, b) { return (a.afterIndex || 0) - (b.afterIndex || 0) || (b.story ? 1 : 0) - (a.story ? 1 : 0); });
+    }
+  }
+
   /* ---------------- утилиты ---------------- */
 
   function $(id) { return document.getElementById(id); }
@@ -93,6 +116,12 @@
     el.progress.textContent = Math.min(S.index + 1, PATIENTS.length) + '/' + PATIENTS.length;
     el.repFill.style.width = Math.max(0, Math.min(100, S.reputation)) + '%';
 
+    if (window.SFX) {
+      // Чем меньше времени, тем быстрее и плотнее музыка смены.
+      var progress = PATIENTS.length ? S.index / PATIENTS.length : 0;
+      window.SFX.intensity(S.remaining <= 20 ? 1 : (S.remaining <= 60 ? 0.7 : 0.15 + 0.35 * progress));
+    }
+
     el.timer.classList.toggle('is-warn', S.remaining <= 60 && S.remaining > 20);
     el.timer.classList.toggle('is-crit', S.remaining <= 20);
     el.repFill.classList.toggle('is-low', S.reputation <= 35);
@@ -124,6 +153,10 @@
         return;
       }
       renderHud();
+      if (window.SFX) {
+        if (S.remaining === 60) window.SFX.play('warn');
+        else if (S.remaining <= 10) window.SFX.play('tick', { crit: S.remaining <= 5 });
+      }
     }, 1000);
   }
 
@@ -240,6 +273,8 @@
     var id = Number(btn.dataset.id);
     var isCorrect = id === p.correct;
 
+    if (window.SFX) window.SFX.play(isCorrect ? 'correct' : 'wrong');
+
     if (isCorrect) {
       btn.classList.add('is-correct');
       Array.prototype.forEach.call(el.diagGrid.querySelectorAll('.diag-btn'), function (b) {
@@ -333,6 +368,7 @@
     if (actionIndex === step) {
       S.treatSeq.push(actionIndex);
       paintTreatment(p);
+      if (window.SFX) window.SFX.play('step', { index: step });
 
       if (S.treatSeq.length === p.treatment.length) {
         S.treatBusy = true;
@@ -343,6 +379,7 @@
         S.saved += 1;
 
         renderHud();
+        if (window.SFX) setTimeout(function () { window.SFX.play('saved'); }, 120);
         toast('Пациент спасён! +' + earnedPoints + ' очков. Награда кабинета — после финала.', 'ok');
 
         setTimeout(function () {
@@ -354,6 +391,7 @@
     }
 
     // ошибочный шаг
+    if (window.SFX) window.SFX.play('wrong');
     S.reputation = Math.max(0, S.reputation - (CFG.penaltyTreatment || 10));
     S.mistakes += 1;
     renderHud();
@@ -384,15 +422,21 @@
     el.screenPatient.classList.add('hidden');
     el.screenCall.classList.remove('hidden');
 
-    el.callTitle.textContent = call.title || 'Звонок диспетчера';
+    el.callTitle.textContent = (call.story ? 'Сюжет · ' : '') + (call.title || 'Звонок диспетчера');
+    el.screenCall.classList.toggle('is-story', !!call.story);
+    el.screenCall.classList.toggle('is-static', call.effect === 'static');
     var speakerId = call.speaker || 'vera';
+    if (window.SFX) {
+      if (call.story) window.SFX.play('radio', { static: call.effect === 'static' });
+      else window.SFX.play('ring');
+    }
     if (el.callSpeaker) {
       el.callSpeaker.textContent = call.speakerName || (window.StoryDialogue ? window.StoryDialogue.characterName(speakerId) : 'Вера · диспетчер');
     }
     if (el.callAvatar && window.StoryDialogue) el.callAvatar.innerHTML = window.StoryDialogue.avatarMarkup(speakerId);
     if (stopCallTyping) stopCallTyping();
     if (window.StoryDialogue && window.StoryDialogue.typeInto) {
-      stopCallTyping = window.StoryDialogue.typeInto(el.callText, call.text || '', 15);
+      stopCallTyping = window.StoryDialogue.typeInto(el.callText, call.text || '', 15, speakerId);
     } else {
       el.callText.textContent = call.text || '';
     }
@@ -400,7 +444,7 @@
     el.callOptions.innerHTML = (call.options || []).map(function (o, i) {
       return '<button class="call-opt" type="button" data-i="' + i + '">' +
                '<span class="call-opt__label">' + esc(o.label) + '</span>' +
-               '<span class="call-opt__meta">' + metaLine(o) + '</span>' +
+               '<span class="call-opt__meta">' + metaLine(o, call.story) + '</span>' +
              '</button>';
     }).join('');
 
@@ -411,8 +455,9 @@
     });
   }
 
-  function metaLine(o) {
+  function metaLine(o, isStory) {
     var parts = [];
+    if (isStory) parts.push('влияет на историю');
     if (o.score) parts.push((o.score > 0 ? '+' : '') + o.score + ' очк');
     if (o.reputation) parts.push((o.reputation > 0 ? '+' : '') + o.reputation + ' реп');
     if (o.seconds) parts.push((o.seconds > 0 ? '+' : '') + o.seconds + ' сек');
@@ -423,11 +468,18 @@
     if (stopCallTyping) { stopCallTyping(); stopCallTyping = null; }
     var opt = (call.options || [])[i];
     if (!opt) return;
+    if (window.SFX) window.SFX.play(call.story ? 'choice' : 'confirm');
 
     Array.prototype.forEach.call(el.callOptions.querySelectorAll('.call-opt'), function (b) {
       b.disabled = true;
       b.classList.toggle('is-picked', b === btn);
     });
+
+    if (call.story) {
+      storyChoice = i;
+      storyFlagsShift = (opt.story && opt.story.flags) ? opt.story.flags.slice() : [];
+      el.screenCall.classList.remove('is-static');
+    }
 
     S.score = Math.max(0, S.score + (opt.score || 0));
     S.reputation = Math.max(0, Math.min(100, S.reputation + (opt.reputation || 0)));
@@ -437,6 +489,7 @@
     toast(opt.result || 'Принято', (opt.reputation || 0) < 0 ? 'bad' : 'ok');
 
     setTimeout(function () {
+      el.screenCall.classList.remove('is-story', 'is-static');
       el.screenCall.classList.add('hidden');
       el.screenPatient.classList.remove('hidden');
 
@@ -446,7 +499,7 @@
       // перед показом звонка. Здесь индекс НЕ трогаем, иначе пациент пропускается.
       S.phase = 'diag';
       beginPatient();
-    }, 1100);
+    }, call.story ? 2200 : 1100);
   }
 
   /* ---------------- переходы ---------------- */
@@ -478,19 +531,24 @@
 
   /* ---------------- автосейв ---------------- */
 
-  function autosave() {
-    if (!NICK || !ENDPOINTS.save) return Promise.resolve();
-
-    var body = {
-      nickname: NICK,
-      state: {
-        version: 1,
-        score: S.score,
-        reputation: S.reputation,
-        remainingSeconds: S.remaining,
-        patientIndex: S.index
-      }
+  function saveState(finished) {
+    return {
+      version: 1,
+      score: S.score,
+      reputation: S.reputation,
+      remainingSeconds: S.remaining,
+      patientIndex: finished ? PATIENTS.length : S.index,
+      storyEpisode: EPISODE && !STORY.isDemo() ? EPISODE.number : 0,
+      storyChoice: storyChoice,
+      finished: !!finished
     };
+  }
+
+  function autosave(finished) {
+    if (!NICK || !ENDPOINTS.save) return Promise.resolve();
+    if (STORY && STORY.isDemo()) return Promise.resolve(null); // демо-эпизод не трогает сохранение
+
+    var body = { nickname: NICK, state: saveState(finished) };
 
     return fetch(ENDPOINTS.save, {
       method: 'POST',
@@ -507,6 +565,7 @@
     if (S.finished || S.paused) return;
     S.paused = true;
     el.modalPause.hidden = false;
+    if (window.SFX) { window.SFX.play('pause'); window.SFX.duck('pause', 0.3); }
 
     el.pauseStats.innerHTML =
       cell('Счёт', num(S.score)) +
@@ -528,6 +587,7 @@
   function resume() {
     S.paused = false;
     el.modalPause.hidden = true;
+    if (window.SFX) { window.SFX.play('resume'); window.SFX.unduck('pause'); }
   }
 
   /* ---------------- финал ---------------- */
@@ -537,6 +597,13 @@
     S.finished = true;
     S.paused = false;
     stopTimer();
+    if (window.SFX) {
+      // Музыка смены обрывается, звучит итог; после — спокойная тема для сцены после смены.
+      window.SFX.unduck('pause');
+      window.SFX.music(null);
+      window.SFX.play(reason === 'reputation' ? 'finishBad' : 'finishGood');
+      setTimeout(function () { if (window.SFX.current() === null) window.SFX.music('menu'); }, 2600);
+    }
 
     var total = PATIENTS.length;
     var accuracy = (S.diagnoses + S.mistakes) > 0
@@ -572,7 +639,88 @@
 
     el.modalFinal.hidden = false;
 
+    autosave(true); // смена сдана: при следующем входе начнётся новая, а не продолжится эта
     submitScore();
+    finishStory(reason);
+  }
+
+  /* ---------------- сюжет после смены ---------------- */
+
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  function finishStory(reason) {
+    var box = $('final-story');
+    if (!EPISODE || !STORY) {
+      if (box) box.hidden = true;
+      return;
+    }
+    var success = reason !== 'reputation' && S.saved >= Math.ceil(PATIENTS.length / 2);
+    var ep = EPISODE;
+    if (box) {
+      box.hidden = false;
+      box.innerHTML = '<p class="final-story__kicker">Сюжет · эпизод ' + ep.number + ' из ' + STORY.total() + '</p><p class="final-story__title">«' + esc(ep.title) + '»</p><p class="final-story__text">История продолжается…</p>';
+    }
+
+    var outcome = null;
+    STORY.complete(ep.number, storyChoice)
+      .then(function (res) {
+        outcome = res;
+        return wait(650);
+      })
+      .then(function () {
+        return STORY.play(ep.after && ep.after[success ? 'success' : 'fail'], {
+          title: 'Эпизод ' + ep.number + ' · после смены',
+          flags: STORY.flags(storyFlagsShift)
+        });
+      })
+      .then(function () {
+        return ep.phone ? STORY.phone(ep.phone, { state: outcome.state }) : null;
+      })
+      .then(function () {
+        if (!ep.finale) return null;
+        var ending = outcome.ending || STORY.pickEnding(outcome.state.team, outcome.state.self);
+        outcome.ending = ending;
+        return STORY.play(ending && ending.lines, { title: 'Финал · «' + (ending ? ending.title : '') + '»', flags: STORY.flags(storyFlagsShift) })
+          .then(function () { return STORY.endingCard(ending); });
+      })
+      .then(function () { renderFinalStory(ep, outcome, success); })
+      .catch(function () { renderFinalStory(ep, outcome, success); });
+  }
+
+  function renderFinalStory(ep, outcome, success) {
+    var box = $('final-story');
+    if (!box) return;
+    var next = !ep.finale ? STORY.episodeByNumber(ep.number + 1) : null;
+    var modeNote = outcome && outcome.mode === 'demo'
+      ? 'Демо-режим: прогресс истории не записан.'
+      : (outcome && outcome.mode === 'local' ? 'База недоступна — прогресс истории сохранён в браузере.' : '');
+    var html = '<p class="final-story__kicker">Сюжет · эпизод ' + ep.number + ' из ' + STORY.total() + (success ? ' пройден' : ' пройден с трудом') + '</p>' +
+      '<p class="final-story__title">«' + esc(ep.title) + '»</p>';
+    if (ep.clue) {
+      if (window.SFX) window.SFX.play('clue');
+      html += '<div class="final-story__clue">' + STORY.clueIcon(ep.clue.icon) + '<span><small>Новая улика</small><b>' + esc(ep.clue.title) + '</b></span></div>';
+    }
+    if (ep.finale && outcome && outcome.ending) {
+      html += '<p class="final-story__next">Концовка: <b>«' + esc(outcome.ending.title) + '»</b></p>';
+    } else if (next) {
+      html += '<p class="final-story__next">Следующая смена: <b>«' + esc(next.title) + '»</b></p>';
+    }
+    if (modeNote) html += '<p class="final-story__note">' + esc(modeNote) + '</p>';
+    html += '<div class="final-story__actions"><button type="button" class="btn btn-ghost btn-sm" id="final-story-replay">Пересмотреть сцену</button>' +
+      '<button type="button" class="btn btn-ghost btn-sm" id="final-story-locker">Шкафчик №12 →</button></div>';
+    box.innerHTML = html;
+
+    var replay = $('final-story-replay');
+    if (replay) replay.addEventListener('click', function () {
+      STORY.play(ep.after && ep.after[success ? 'success' : 'fail'], { title: 'Эпизод ' + ep.number + ' · после смены', flags: STORY.flags(storyFlagsShift) });
+    });
+
+    var locker = $('final-story-locker');
+    if (locker) locker.addEventListener('click', function () { STORY.journal({ section: 'clues' }); });
+    updateStoryHud();
+
+    var nextBtn = $('btn-next-shift');
+    if (nextBtn && next && !STORY.isDemo()) nextBtn.textContent = 'Следующая смена →';
   }
 
   function submitScore() {
@@ -613,6 +761,7 @@
     if (!NICK || !saved || !saved.state) return false;
 
     var st = saved.state;
+    if (st.finished) return false;
     var idx = Number(st.patientIndex);
     if (!isFinite(idx) || idx < 0 || idx >= PATIENTS.length) return false;
 
@@ -620,6 +769,13 @@
     S.score = Math.max(0, Number(st.score) || 0);
     S.reputation = Math.max(1, Math.min(100, Number(st.reputation) || 100));
     S.remaining = Math.max(30, Number(st.remainingSeconds) || CFG.shiftSeconds || 300);
+    S.resumedStory = !!(EPISODE && Number(st.storyEpisode) === Number(EPISODE.number));
+    if (S.resumedStory && st.storyChoice != null && st.storyChoice !== '') {
+      storyChoice = Number(st.storyChoice);
+      var picked = EPISODE.call && EPISODE.call.options && EPISODE.call.options[storyChoice];
+      storyFlagsShift = picked && picked.story && picked.story.flags ? picked.story.flags.slice() : [];
+      S.callQueue = S.callQueue.filter(function (c) { return !c.story; });
+    }
 
     toast('Продолжаем смену: ' + num(S.score) + ' очков', 'ok');
     return true;
@@ -688,7 +844,7 @@
 
     document.addEventListener('keydown', function (e) {
       var isPauseKey = e.key === 'p' || e.key === 'P' || e.key === 'з' || e.key === 'З' || e.key === 'Escape';
-      if (!isPauseKey || S.finished || (window.StoryDialogue && window.StoryDialogue.isOpen())) return;
+      if (!isPauseKey || S.finished || document.body.classList.contains('story-dialogue-open') || (window.StoryDialogue && window.StoryDialogue.isOpen())) return;
 
       if (S.paused) {
         resume();
@@ -705,11 +861,8 @@
     // не теряем смену при закрытии вкладки: сохраняем фоном, без диалогов
     window.addEventListener('beforeunload', function () {
       if (S.finished || !NICK) return;
-      var payload = JSON.stringify({
-        nickname: NICK,
-        state: { version: 1, score: S.score, reputation: S.reputation,
-                 remainingSeconds: S.remaining, patientIndex: S.index }
-      });
+      if (STORY && STORY.isDemo()) return;
+      var payload = JSON.stringify({ nickname: NICK, state: saveState(false) });
       if (navigator.sendBeacon) {
         navigator.sendBeacon(ENDPOINTS.save, new Blob([payload], { type: 'application/json' }));
       }
@@ -754,85 +907,88 @@
     }
   }
 
-  function shiftStoryBeat() {
-    var p = DATA.storyProgress || {};
-    var shifts = Number(p.shifts_finished) || 0;
-    var operationSuccess = Number(p.operations_success) || 0;
-    var hospitalLevel = Number(p.hospital_level) || 0;
-    if (!NICK || !window.StoryDialogue) return null;
+  /** Кнопка истории в HUD: текущий эпизод + «Шкафчик №12» (журнал, улики, телефон). */
+  function updateStoryHud() {
+    var btn = $('btn-story');
+    if (!btn || !STORY) return;
+    btn.hidden = false;
+    var epEl = $('hud-story-ep');
+    var titleEl = $('hud-story-title');
+    if (EPISODE) {
+      epEl.textContent = 'Эп. ' + EPISODE.number + '/' + STORY.total();
+      titleEl.textContent = EPISODE.title;
+    } else {
+      epEl.textContent = 'Сезон 1';
+      titleEl.textContent = 'Шкафчик №12';
+    }
+  }
 
-    if (shifts >= 3 && hospitalLevel >= 2) {
-      return {
-        key: 'story-finale', title: 'Сюжет · до рассвета',
-        lines: [
-          { speaker: 'vera', text: 'Смена 03, хорошая работа. Районные пункты снова принимают обращения, а поток пациентов распределён спокойнее.' },
-          { speaker: 'ilya', text: 'Триаж-пост и тренировка помогли навести порядок. Подстанция готова к следующему дежурству.' },
-          { speaker: 'vera', text: 'До рассвета справились. Эта история продолжается с каждой новой сменой.' }
-        ]
-      };
+  function bindStoryHud() {
+    var btn = $('btn-story');
+    if (!btn || !STORY) return;
+    updateStoryHud();
+    btn.addEventListener('click', function () {
+      if (document.body.classList.contains('story-line-open')) return;
+      // Пока открыт шкафчик, время смены стоит.
+      var wasPaused = S.paused;
+      if (!S.finished) S.paused = true;
+      STORY.journal({ section: 'journal' }).then(function () {
+        if (!S.finished && !wasPaused) S.paused = false;
+      });
+    });
+  }
+
+  /** Вступление эпизода: пролог (только эпизод 1), карточка эпизода, диалог. */
+  function storyIntro() {
+    if (!EPISODE || !STORY) {
+      // Сезон пройден — короткая реплика один раз, дальше обычные смены.
+      if (STORY && STORY.state().episode >= STORY.total() && window.StoryDialogue) {
+        return window.StoryDialogue.showOnce('season1-after', STORY.prepareLines([
+          { speaker: 'vera', text: 'Смена 03, проверка связи. {nick}, ты на линии — как и обещал.' },
+          { speaker: 'ilya', text: 'Сезон историй закрыт, но вызовы не заканчиваются. Работаем по протоколу.' }
+        ]), { nickname: NICK, title: 'Подстанция 03' });
+      }
+      return Promise.resolve();
     }
-    if (shifts === 0) {
-      return {
-        key: 'story-first-shift', title: 'Сюжет · первая смена',
-        lines: [
-          { speaker: 'vera', text: 'Смена 03, проверка связи. После ночного шторма несколько обращений перенаправили к нам.' },
-          { speaker: 'vera', text: 'Сегодня ты впервые в этой бригаде. Не спеши: внимательно смотри на показатели и действуй по протоколу.' },
-          { speaker: 'ilya', text: 'Я Илья, наставник на линии. Учебную тренировку можно пройти отдельно в кабинете — здесь работаем спокойно и последовательно.' }
-        ]
-      };
+    var data = STORY.data() || {};
+    var chain = Promise.resolve();
+    // Пролог обычно уже показан на главной; если игрок пришёл по прямой ссылке — показываем здесь.
+    if (Number(EPISODE.number) === 1 && data.prologue && (!STORY.prologueSeen() || STORY.isDemo())) {
+      chain = chain.then(function () { return STORY.playPrologue(); });
     }
-    if (operationSuccess === 0) {
-      return {
-        key: 'story-training-invitation', title: 'Сюжет · сообщение диспетчера',
-        lines: [
-          { speaker: 'vera', text: 'Первую смену провели. Когда будет удобно, открой учебную операцию в кабинете: Илья подготовил манекен для тренировки фиксации.' },
-          { speaker: 'ilya', text: 'Это учебный сценарий без спешки. Разберём этапы по порядку, а затем вернёмся к обычным вызовам.' }
-        ]
-      };
-    }
-    if (shifts >= 2 && hospitalLevel < 2) {
-      return {
-        key: 'story-triage-request', title: 'Сюжет · подстанция',
-        lines: [
-          { speaker: 'ilya', text: 'Тренировку прошли. Теперь подстанции поможет триаж-пост: он упростит первичную сортировку и организацию приёма.' },
-          { speaker: 'vera', text: 'Улучшения доступны во вкладке «Развитие» кабинета. Можно продолжить смену и вернуться к ним позже.' }
-        ]
-      };
-    }
-    if (operationSuccess > 0 && shifts < 3) {
-      return {
-        key: 'story-after-training', title: 'Сюжет · новая смена',
-        lines: [
-          { speaker: 'ilya', text: 'Хорошо отработали учебную фиксацию. Важно сохранять тот же спокойный порядок и на следующих сценариях.' },
-          { speaker: 'vera', text: 'Подстанция постепенно готовится к большему потоку. Начинаем дежурство, я буду на связи.' }
-        ]
-      };
-    }
-    return null;
+    return chain
+      .then(function () { return STORY.episodeCard(EPISODE); })
+      .then(function () { return STORY.play(EPISODE.before, { title: 'Эпизод ' + EPISODE.number + ' · «' + EPISODE.title + '»' }); });
   }
 
   function beginShiftWithStory() {
-    var beat = shiftStoryBeat();
-    if (!beat) { beginPatient(); startTimer(); return; }
-    window.StoryDialogue.showOnce(beat.key, beat.lines, { nickname: NICK, title: beat.title })
-      .then(function () {
-        if (S.finished) return;
-        beginPatient();
-        startTimer();
-      });
+    storyIntro().then(function () {
+      if (S.finished) return;
+      if (window.SFX) window.SFX.music('shift');
+      beginPatient();
+      startTimer();
+    });
   }
 
   function init() {
+    // Пока идёт вступление эпизода — тема подстанции, со стартом смены — музыка смены.
+    if (window.SFX) window.SFX.music(EPISODE && STORY ? 'menu' : 'shift');
     bind();
+    bindStoryHud();
     initPaletteSwitcher();
 
     if (restoreFromSave()) {
-      // Продолжаем сохранённую смену без повторного вступления.
-      renderPatient();
-      renderDiagnoses();
+      // Продолжаем сохранённую смену. Вступление эпизода показываем, только если
+      // сохранение было сделано до начала текущего эпизода.
       renderHud();
-      startTimer();
-      autosave();
+      (S.resumedStory ? Promise.resolve() : storyIntro()).then(function () {
+        if (S.finished) return;
+        if (window.SFX) window.SFX.music('shift');
+        renderPatient();
+        renderDiagnoses();
+        startTimer();
+        autosave();
+      });
       return;
     }
 

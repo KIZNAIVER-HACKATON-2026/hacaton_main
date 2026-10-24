@@ -42,6 +42,8 @@ $clean = [
     'reputation'       => max(0, min(100, (int) ($state['reputation'] ?? 100))),
     'remainingSeconds' => max(0, (int) ($state['remainingSeconds'] ?? 0)),
     'patientIndex'     => max(0, (int) ($state['patientIndex'] ?? 0)),
+    'storyEpisode'     => max(0, min(20, (int) ($state['storyEpisode'] ?? 0))),
+    'finished'         => !empty($state['finished']),
     'savedAt'          => date('c'),
 ];
 

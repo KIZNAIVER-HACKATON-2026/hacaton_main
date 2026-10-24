@@ -31,15 +31,32 @@ $storyProgress = [
     'operations_success' => 0,
     'hospital_level' => 0,
 ];
+$storyState = null;
+$profile = [];
 $player = db_find_player($nick);
 if ($player) {
     $save = db_load_save((int) $player['player_id']);
+    if ($save && !empty($save['state']['finished'])) $save = null; // смена уже сдана
     $dashboard = db_player_dashboard((int) $player['player_id']);
+    $profile = $dashboard['profile'] ?? [];
     if (!empty($dashboard['profile'])) {
         foreach ($storyProgress as $key => $default) {
             $storyProgress[$key] = (int) ($dashboard['profile'][$key] ?? $default);
         }
     }
+    $storyState = story_load((int) $player['player_id']);
+} elseif (data_db_ok()) {
+    $storyState = story_default_state();
+}
+
+// Сюжет «Вернуться на линию»: весь сезон уходит на клиент, текущий эпизод
+// выбирается по прогрессу игрока. ?episode=N — демо-режим для показа жюри
+// (эпизод проигрывается, но прогресс не записывается).
+$story = story_client_payload($storyState, $profile, true);
+$demoEpisode = (int) ($_GET['episode'] ?? 0);
+if ($demoEpisode >= 1 && $demoEpisode <= story_episode_count()) {
+    $story['demoEpisode'] = $demoEpisode;
+    $save = null;
 }
 ?>
 <!DOCTYPE html>
@@ -53,7 +70,9 @@ if ($player) {
   <link rel="stylesheet" href="assets/css/pixel-theme.css?v=2.2">
   <link rel="stylesheet" href="assets/css/pixel-window.css?v=2.2">
   <link rel="stylesheet" href="assets/css/readability.css?v=2.2">
-  <link rel="stylesheet" href="assets/css/story-dialogue.css?v=1.0">
+  <link rel="stylesheet" href="assets/css/story-dialogue.css?v=2.0">
+  <link rel="stylesheet" href="assets/css/story-line.css?v=1.2">
+  <link rel="stylesheet" href="assets/css/sound.css?v=1.0">
 </head>
 <body class="game-body">
 
@@ -94,7 +113,9 @@ if ($player) {
   </div>
 
   <div class="hud__right">
+    <button class="hud__btn hud__btn--story" id="btn-story" type="button" title="Шкафчик №12: журнал, улики, телефон" hidden><span class="hud__story-ep" id="hud-story-ep">Эп. 1</span><span class="hud__story-title" id="hud-story-title">История</span></button>
     <a class="hud__btn hud__btn--cabinet" href="index.php" title="Вернуться в личный кабинет">Кабинет</a>
+    <span class="snd-slot" data-sound-slot></span>
     <button class="hud__btn" id="btn-pause" type="button" title="Пауза (P)">
       <svg class="ico" aria-hidden="true"><use href="#i-pause"/></svg>
     </button>
@@ -242,8 +263,10 @@ if ($player) {
 
       <p class="final__save" id="final-save"></p>
 
+      <div class="final-story" id="final-story" hidden></div>
+
       <div class="modal__actions">
-        <a class="btn btn-primary btn-lg" href="game.php<?= $nick !== null ? '?nick=' . urlencode($nick) : '' ?>">Ещё смена</a>
+        <a class="btn btn-primary btn-lg" id="btn-next-shift" href="game.php<?= $nick !== null ? '?nick=' . urlencode($nick) : '' ?>">Ещё смена</a>
         <a class="btn btn-ghost" href="index.php">В меню</a>
         <a class="btn btn-ghost" href="rules.php">Правила</a>
       </div>
@@ -260,15 +283,19 @@ window.SHIFT = <?= json_encode([
     'config'     => $config,
     'save'       => $save,
     'storyProgress' => $storyProgress,
+    'story'      => $story,
     'dbOk'       => data_db_ok(),
     'endpoints'  => [
         'save'  => 'api/save.php',
         'score' => 'api/score.php',
+        'story' => 'api/story.php',
     ],
 ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 </script>
+<script src="assets/js/sound.js?v=1.0"></script>
 <script src="assets/js/pixel-art.js?v=2.3"></script>
-<script src="assets/js/story-dialogue.js?v=1.0"></script>
-<script src="assets/js/shift.js?v=3.3"></script>
+<script src="assets/js/story-dialogue.js?v=2.1"></script>
+<script src="assets/js/story-line.js?v=1.2"></script>
+<script src="assets/js/shift.js?v=4.2"></script>
 </body>
 </html>

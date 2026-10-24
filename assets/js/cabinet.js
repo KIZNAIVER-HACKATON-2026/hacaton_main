@@ -8,6 +8,7 @@
   var equipment = Array.isArray(DATA.equipment) ? DATA.equipment : [];
   var hospitalLevels = DATA.hospitalLevels || {};
   var content = document.getElementById('cabinet-content');
+  var STORY = (window.StoryLine && DATA.story) ? window.StoryLine.init(DATA.story, { nick: nick, endpoint: 'api/story.php' }) : null;
 
   function esc(value) {
     return String(value == null ? '' : value)
@@ -86,7 +87,7 @@
       '<section class="cabinet-tab-panel' + (activeTab === 'games' ? ' is-active' : '') + '" id="cabinet-panel-games" role="tabpanel" aria-labelledby="cabinet-tab-games" data-cabinet-panel="games"' + (activeTab === 'games' ? '' : ' hidden') + '>' +
         '<div class="cabinet-panel cabinet-games"><div class="cabinet-panel__head"><div><p>Игровые режимы</p><h3>Выбери задание</h3></div></div>' +
           '<div class="game-mode-grid">' +
-            '<a class="game-mode" href="game.php?nick=' + encodeURIComponent(nick) + '"><span class="game-mode__icon">' + pixelIcon('ambulance') + '</span><span><b>Ночная смена</b><small>12 пациентов · диагноз и порядок лечения</small></span><i>Играть →</i></a>' +
+            '<a class="game-mode" href="game.php?nick=' + encodeURIComponent(nick) + '"><span class="game-mode__icon">' + pixelIcon('ambulance') + '</span><span><b>Ночная смена</b><small>12 пациентов · диагноз и порядок лечения' + (STORY && STORY.currentEpisode() ? ' · эпизод ' + STORY.currentEpisode().number + ' истории' : '') + '</small></span><i>Играть →</i></a>' +
             '<a class="game-mode game-mode--operation" href="operation.php?nick=' + encodeURIComponent(nick) + '"><span class="game-mode__icon">' + pixelIcon('bandage') + '</span><span><b>Учебная операция</b><small>4 операции · подай инструменты в нужном порядке</small></span><i>Оперировать →</i></a>' +
           '</div>' +
           '<div class="daily-mission ' + progress + '"><span>Миссия дня</span><b>' + esc(modeGoal) + '</b><small>' + (p.operations_success > 0 ? 'Выполнено: опыт и бюджет уже начислены.' : 'Успех даст +90 ₽ и +50 XP. Ошибки не сбрасывают прогресс.') + '</small></div>' +
@@ -196,14 +197,37 @@
     }).then(function (response) { return response.json().catch(function () { return null; }); })
       .then(function (data) {
         if (data && data.dashboard) dashboard = data.dashboard;
+        if (data && data.ok) storyReaction(kind, id);
+        if (window.SFX) window.SFX.play(data && data.ok ? 'coin' : 'error');
         if (!data || !data.ok) {
           window.alert(data && data.error === 'requirements_not_met' ? 'Пока не выполнены требования улучшения.' : 'Покупку не удалось выполнить. Обновите страницу и проверьте базу данных.');
         }
         render();
       }).catch(function () {
+        if (window.SFX) window.SFX.play('error');
         window.alert('Нет связи с сервером. Покупка не выполнена.');
         render();
       });
+  }
+
+  /* Сюжет реагирует на развитие подстанции: короткие реплики после покупок. */
+  function storyReaction(kind, id) {
+    if (!window.StoryDialogue) return;
+    var lines = null, key = null;
+    if (kind === 'equipment' && id === 'radio') {
+      key = 'story-buy-radio';
+      lines = [
+        { speaker: 'vera', text: 'Новая радиостанция? Два года я ждала, что кто-нибудь её купит.' },
+        { speaker: 'vera', text: 'Теперь, если в шторм ты позовёшь, я услышу. Сразу, а не через четыре минуты.' }
+      ];
+    } else if (kind === 'hospital') {
+      key = 'story-buy-hospital-' + id;
+      lines = [{ speaker: 'ilya', text: 'Подстанция растёт. Чем лучше оснащение, тем меньше бригада остаётся одна со сложным вызовом.' }];
+    } else if (kind === 'equipment') {
+      key = 'story-buy-equipment-first';
+      lines = [{ speaker: 'sonya', text: 'Ого, новое оборудование! Можно я потом попробую? Я буду аккуратно.' }];
+    }
+    if (lines) window.StoryDialogue.showOnce(key, STORY ? STORY.prepareLines(lines) : lines, { nickname: nick, title: 'Подстанция 03' });
   }
 
   function loadDashboard() {
@@ -397,16 +421,20 @@
       fetch('api/player.php?action=start', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify({ nickname: value }) })
         .then(function (response) { return response.json().catch(function () { return null; }); })
         .then(function (data) {
-          if (data && data.ok) window.location.href = 'index.php?nick=' + encodeURIComponent(data.nickname || value) + '#cabinet';
+          // Новый игрок сразу попадает в первую смену истории, вернувшийся — на главную.
+          if (data && data.ok) window.location.href = data.created
+            ? 'game.php?nick=' + encodeURIComponent(data.nickname || value)
+            : 'index.php?nick=' + encodeURIComponent(data.nickname || value);
           else {
             error.textContent = 'Не удалось открыть кабинет. Проверьте подключение к базе.';
-            error.hidden = false; submit.disabled = false; submit.textContent = 'Войти в кабинет';
+            error.hidden = false; submit.disabled = false; submit.textContent = 'Вернуться на линию';
           }
-        }).catch(function () { error.textContent = 'Нет связи с сервером.'; error.hidden = false; submit.disabled = false; submit.textContent = 'Войти в кабинет'; });
+        }).catch(function () { error.textContent = 'Нет связи с сервером.'; error.hidden = false; submit.disabled = false; submit.textContent = 'Вернуться на линию'; });
     });
   }
 
   bindLogin();
   bindEncyclopedia();
   if (nick) loadDashboard();
+
 })();

@@ -199,6 +199,7 @@
     try { btn.setPointerCapture(e.pointerId); } catch (err) {}
     drag = { btn: btn, id: e.pointerId, x0: e.clientX, y0: e.clientY, dx: 0, dy: 0, moved: false };
     btn.classList.add('is-grabbed');
+    if (window.SFX) window.SFX.play('pick');
     btn.closest('.tray-slot').classList.add('is-lifted');
     document.body.classList.add('is-dragging-tool');
     btn.addEventListener('pointermove', onMove);
@@ -218,6 +219,7 @@
     if (!drag || e.pointerId !== drag.id) return;
     var d = endDrag();
     if (d.moved && isOverDrop(e.clientX, e.clientY)) { clearSelection(); applyTool(d.btn, d); return; }
+    if (d.moved && window.SFX) window.SFX.play('drop');
     returnHome(d.btn); // кликнули или отпустили мимо — предмет возвращается на место
     if (!d.moved) toggleSelection(d.btn); // короткое касание — выбрать предмет (удобно на телефоне)
     else clearSelection();
@@ -313,6 +315,7 @@
       state.score += gained;
       state.used[id] = true;
       flyToPatient(btn, d);
+      if (window.SFX) window.SFX.play('apply');
       el.drop.classList.add('is-accepted');
       setFeedback('good', '✓ Верно! ' + step.note + ' +' + gained);
       setTimeout(function () {
@@ -348,6 +351,7 @@
       setFeedback('bad', '«' + tool.name + '» не нужен в этой операции. −' + p.score + ' очков, −' + p.time + ' сек.');
     }
     el.drop.classList.add('is-rejected');
+    if (window.SFX) window.SFX.play('reject');
     setTimeout(function () { el.drop.classList.remove('is-rejected'); }, 450);
     returnHome(btn, true);
     renderHud();
@@ -392,6 +396,7 @@
     if (state.finished) return;
     state.remaining -= 1;
     renderHud();
+    if (window.SFX && state.remaining > 0 && state.remaining <= 10) window.SFX.play('tick', { crit: state.remaining <= 5 });
     if (state.remaining <= 0) finish(false);
   }
 
@@ -399,6 +404,11 @@
     if (state.finished) return;
     state.finished = true;
     clearInterval(state.timer);
+    if (window.SFX) {
+      window.SFX.music(null);
+      window.SFX.play(success ? 'finishGood' : 'finishBad');
+      setTimeout(function () { if (window.SFX.current() === null) window.SFX.music('menu'); }, 2600);
+    }
     if (drag) returnHome(endDrag().btn);
     clearSelection();
     renderProgress();
@@ -434,7 +444,13 @@
       if (firstAction) firstAction.focus();
     }
     setTimeout(function () {
-      if (window.StoryDialogue) {
+      // Сюжет «Вернуться на линию»: если в открытом эпизоде есть сцена после операции — показываем её один раз.
+      var storyScene = success && window.StoryDialogue ? (DATA.storyOperation || []).filter(function (scene) {
+        return !window.StoryDialogue.hasSeen(scene.key, { nickname: DATA.nick });
+      })[0] : null;
+      if (storyScene) {
+        window.StoryDialogue.showOnce(storyScene.key, storyScene.lines, { nickname: DATA.nick, title: storyScene.title }).then(revealFinal);
+      } else if (window.StoryDialogue) {
         window.StoryDialogue.showOnce(storyKey, debrief, { nickname: DATA.nick, title: success ? 'Сюжет · разбор операции' : 'Сюжет · поддержка наставника' }).then(revealFinal);
       } else {
         revealFinal();
@@ -452,6 +468,7 @@
 
   function startScenario() {
     state.started = true;
+    if (window.SFX) window.SFX.music('operation');
     renderStep();
     state.timer = setInterval(tick, 1000);
   }

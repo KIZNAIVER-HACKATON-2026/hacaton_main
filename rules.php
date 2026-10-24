@@ -25,6 +25,7 @@ $gameUrl = 'game.php' . ($nick !== null ? '?nick=' . urlencode($nick) : '');
   <link rel="stylesheet" href="assets/css/pixel-theme.css?v=2.2">
   <link rel="stylesheet" href="assets/css/rules-pixel.css?v=2.2">
   <link rel="stylesheet" href="assets/css/readability.css?v=2.2">
+  <link rel="stylesheet" href="assets/css/sound.css?v=1.0">
 </head>
 <body>
 
@@ -32,6 +33,7 @@ $gameUrl = 'game.php' . ($nick !== null ? '?nick=' . urlencode($nick) : '');
   <nav class="rules-nav">
     <a href="index.php" class="btn btn-ghost">← В меню</a>
     <a href="<?= e($gameUrl) ?>" class="btn btn-primary">▶ Начать смену</a>
+    <span class="snd-slot" data-sound-slot></span>
   </nav>
 
   <header class="rules-header">
@@ -155,5 +157,7 @@ $gameUrl = 'game.php' . ($nick !== null ? '?nick=' . urlencode($nick) : '');
   </div>
 </main>
 
+<script src="assets/js/sound.js?v=1.0"></script>
+<script>window.SFX && SFX.music('menu');</script>
 </body>
 </html>

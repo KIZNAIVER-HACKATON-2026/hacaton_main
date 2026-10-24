@@ -147,3 +147,9 @@ body.story-dialogue-open { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .story-dialogue, .story-dialogue__text.is-typing::after { animation: none !important; }
 }
+
+/* Сюжет «Вернуться на линию»: цвет имени зависит от говорящего. */
+.story-overlay[data-speaker="hero"] .story-dialogue__speaker { color: #f0a95c; }
+.story-overlay[data-speaker="unknown"] .story-dialogue__speaker { color: #e2685a; }
+.story-overlay[data-speaker="petr"] .story-dialogue__speaker,
+.story-overlay[data-speaker="gromov"] .story-dialogue__speaker { color: #a9d9d0; }

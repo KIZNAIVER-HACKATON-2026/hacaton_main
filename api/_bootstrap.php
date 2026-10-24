@@ -75,6 +75,7 @@ function save_for_player(int $playerId): ?array
     if (!$save) return null;
 
     $state = $save['state'];
+    if (!empty($state['finished'])) return null; // смена уже сдана — продолжать нечего
     return [
         'score'             => (int) ($state['score'] ?? 0),
         'reputation'        => (int) ($state['reputation'] ?? 100),

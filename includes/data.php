@@ -9,6 +9,7 @@
 
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/progression.php';
+require_once __DIR__ . '/story.php';
 
 /** Есть ли живое подключение к БД (для бейджа на главной). */
 function data_db_ok(): bool

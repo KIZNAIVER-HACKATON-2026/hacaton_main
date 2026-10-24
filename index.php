@@ -45,7 +45,8 @@ $backgroundTier = $rank >= 1 && $rank <= 3 ? $rank : 4;
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#070a0e">
   <title>Смена 03 — учебный симулятор фельдшера</title>
   <meta name="description" content="Учебный симулятор ночной смены, операций и развития больницы.">
   <link rel="preload" as="image" href="assets/img/fon_main.webp" type="image/webp">
@@ -57,6 +58,7 @@ $backgroundTier = $rank >= 1 && $rank <= 3 ? $rank : 4;
   <link rel="stylesheet" href="assets/css/story-dialogue.css?v=2.0">
   <link rel="stylesheet" href="assets/css/story-line.css?v=1.2">
   <link rel="stylesheet" href="assets/css/sound.css?v=1.0">
+  <link rel="stylesheet" href="assets/css/mobile.css?v=1.0">
 </head>
 <body class="landing" data-db="<?= $dbOk ? '1' : '0' ?>" data-rank="<?= $rank ?: '' ?>">
 <svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">

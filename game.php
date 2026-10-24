@@ -63,7 +63,8 @@ if ($demoEpisode >= 1 && $demoEpisode <= story_episode_count()) {
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#070a0e">
   <title>Смена — Смена 03</title>
   <link rel="stylesheet" href="assets/css/base.css?v=2.2">
   <link rel="stylesheet" href="assets/css/game.css?v=2.3">
@@ -73,6 +74,7 @@ if ($demoEpisode >= 1 && $demoEpisode <= story_episode_count()) {
   <link rel="stylesheet" href="assets/css/story-dialogue.css?v=2.0">
   <link rel="stylesheet" href="assets/css/story-line.css?v=1.2">
   <link rel="stylesheet" href="assets/css/sound.css?v=1.0">
+  <link rel="stylesheet" href="assets/css/mobile.css?v=1.0">
 </head>
 <body class="game-body">
 
@@ -296,6 +298,6 @@ window.SHIFT = <?= json_encode([
 <script src="assets/js/pixel-art.js?v=2.3"></script>
 <script src="assets/js/story-dialogue.js?v=2.1"></script>
 <script src="assets/js/story-line.js?v=1.2"></script>
-<script src="assets/js/shift.js?v=4.2"></script>
+<script src="assets/js/shift.js?v=4.3"></script>
 </body>
 </html>

@@ -178,6 +178,16 @@
 
   function currentPatient() { return PATIENTS[S.index]; }
 
+  /* Телефон: карточка и шаги идут друг под другом — подкручиваем экран к нужному блоку. */
+  function mobileScroll(node) {
+    if (!window.matchMedia || !window.matchMedia('(max-width: 900px)').matches) return;
+    var hud = document.getElementById('hud');
+    var offset = hud ? hud.offsetHeight + 8 : 0;
+    var top = node ? node.getBoundingClientRect().top + window.pageYOffset - offset : 0;
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: Math.max(0, top), behavior: reduce ? 'auto' : 'smooth' });
+  }
+
   function renderPatient() {
     var p = currentPatient();
     if (!p) return;
@@ -329,6 +339,7 @@
     S.treatSeq = [];
     S.treatOrder = randomTreatmentOrder(p.treatment.length);
     paintTreatment(p);
+    mobileScroll(el.stepTreat);
   }
 
   function paintTreatment(p) {
@@ -421,6 +432,7 @@
     S.phase = 'call';
     el.screenPatient.classList.add('hidden');
     el.screenCall.classList.remove('hidden');
+    mobileScroll(null);
 
     el.callTitle.textContent = (call.story ? 'Сюжет · ' : '') + (call.title || 'Звонок диспетчера');
     el.screenCall.classList.toggle('is-story', !!call.story);
@@ -527,6 +539,7 @@
     renderPatient();
     renderDiagnoses();
     autosave();
+    mobileScroll(null);
   }
 
   /* ---------------- автосейв ---------------- */

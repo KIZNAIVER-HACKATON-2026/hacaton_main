@@ -5,12 +5,14 @@ $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#070a0e">
   <title>Лечение — Смена 03</title>
   <link rel="stylesheet" href="assets/css/base.css">
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/pixel-theme.css">
   <link rel="stylesheet" href="assets/css/readability.css">
+  <link rel="stylesheet" href="assets/css/mobile.css?v=1.0">
 </head>
 <body>
 <main class="patient-page">

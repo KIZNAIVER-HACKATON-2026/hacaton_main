@@ -51,7 +51,8 @@ if ($player) {
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#070a0e">
   <title><?= e($scenario['title']) ?> · Учебная операция</title>
   <link rel="stylesheet" href="assets/css/operation.css?v=3.2">
   <link rel="stylesheet" href="assets/css/pixel-theme.css?v=3.0">
@@ -59,6 +60,7 @@ if ($player) {
   <link rel="stylesheet" href="assets/css/story-dialogue.css?v=2.0">
   <link rel="stylesheet" href="assets/css/operation-dnd.css?v=2.0">
   <link rel="stylesheet" href="assets/css/sound.css?v=1.0">
+  <link rel="stylesheet" href="assets/css/mobile.css?v=1.0">
 </head>
 <body class="operation-body">
 <header class="op-hud"><a class="op-brand" href="index.php"><span>03</span><b><?= e($nick) ?></b></a><div class="op-hud__title">Учебная операция · инструменты</div><div class="op-hud__stats"><span>Время <b id="op-time">03:00</b></span><span>Счёт <b id="op-score">0</b></span><span>Точность <b id="op-rep">100</b></span></div><span class="snd-slot" data-sound-slot></span></header>

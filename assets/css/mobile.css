@@ -1,0 +1,307 @@
+/* ==========================================================================
+   mobile.css — адаптив «Смены 03» для телефонов.
+   Подключается ПОСЛЕДНИМ на всех страницах, поэтому перекрывает
+   стили main.css / game.css / pixel-*.css только на узких экранах.
+   Десктопная вёрстка не меняется.
+   ========================================================================== */
+
+/* ---------- Общее для любых сенсорных устройств ---------- */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+a, button, [role="button"], [role="tab"], label, summary {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation; /* убирает задержку 300 мс и двойной тап-зум на кнопках */
+}
+
+/* На тач-экранах :hover «залипает» после касания — отключаем сдвиги кнопок. */
+@media (hover: none) {
+  .btn:hover, .btn-primary:hover, .btn-ghost:hover, .btn-play:hover,
+  .btn-solid:hover, .btn-flat:hover, .hud__btn:hover, .diag-btn:hover,
+  .treat-btn:hover, .call-opt:hover, .op-action:hover {
+    transform: none !important;
+  }
+  .diag-btn:active:not(:disabled), .treat-btn:active:not(:disabled),
+  .call-opt:active:not(:disabled), .btn:active, .btn-play:active {
+    transform: scale(.98) !important;
+  }
+}
+
+/* ==========================================================================
+   ГЛАВНАЯ (index.php)
+   ========================================================================== */
+@media (max-width: 720px) {
+  .wrap { padding-left: 14px; padding-right: 14px; }
+
+  /* Верхняя панель: логотип + звук в первой строке, навигация — во второй */
+  .topbar { position: relative; gap: 8px; padding: 12px 0 6px; }
+  .topbar .snd-slot { position: absolute; top: 12px; right: 0; }
+  .topbar__nav .snd { margin-left: 0; }
+  .topbar__nav {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    gap: 4px;
+    width: 100%;
+    margin: 0;
+    padding: 4px;
+    border: 2px solid rgba(127, 214, 176, .22);
+    background: rgba(5, 9, 13, .55);
+  }
+  .topbar__link {
+    flex: 1 1 auto;
+    min-height: 40px;
+    padding: 8px 6px !important;
+    border-radius: 2px !important;
+    font-size: 14px !important;
+    text-align: center;
+  }
+
+  .menu__kicker {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+    letter-spacing: .04em !important;
+  }
+  .menu__kicker::before { display: none; }
+  .menu__title { font-size: clamp(50px, 17vw, 80px); }
+  .menu__lead { font-size: 15.5px !important; }
+
+  /* Эпизоды сезона — 3 колонки, компактно */
+  .menu-story { gap: 6px; }
+
+  .menu__actions { display: flex; flex-direction: column; gap: 10px; }
+  .menu__actions > * { width: 100%; }
+  .btn-play { min-height: 64px; }
+
+  /* Чипы «Смена» / «Диагнозов в базе» — в одну строку */
+  .menu__meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
+  .menu__meta .chip { justify-content: center; min-width: 0; padding: 8px 6px; font-size: 13px !important; text-align: center; flex-wrap: wrap; }
+  .menu__meta .chip:nth-child(3) { grid-column: 1 / -1; }
+
+  /* Личный кабинет: убираем лишние вложенные отступы, чтобы контенту хватало ширины */
+  #cabinet.cabinet { padding: 10px !important; border-width: 3px !important; }
+  #cabinet .cabinet-panel { padding: 12px !important; }
+  #cabinet .cabinet__head,
+  #cabinet .cabinet__login { padding: 12px !important; }
+  #cabinet .cabinet__head-actions { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
+  #cabinet .cabinet__head-actions > * { flex: 1 1 auto; justify-content: center; min-height: 44px; }
+
+  #cabinet .cabinet-tabs, #cabinet [role="tablist"] { gap: 6px; }
+  #cabinet [role="tab"] { min-height: 44px; }
+
+  /* Миссия дня: заголовок сверху, а не узкой колонкой слева */
+  #cabinet .daily-mission { grid-template-columns: 1fr; gap: 4px; }
+  #cabinet .daily-mission span { grid-row: auto; align-self: start; }
+
+  .cabinet-login-form input { width: 100%; }
+  .cabinet-login-form .btn-solid { width: 100%; min-height: 48px; }
+
+  .foot { flex-direction: column; align-items: flex-start; gap: 8px; }
+}
+
+@media (max-width: 380px) {
+  .topbar__link { font-size: 12.5px !important; padding: 8px 3px !important; }
+  .menu__meta .chip { font-size: 12px !important; padding: 8px 4px; }
+  .menu__meta .chip .ico { display: none; }
+}
+
+/* Модальные окна главной: чуть больше места и крупные кнопки закрытия */
+@media (max-width: 600px) {
+  .leaderboard-modal { width: calc(100% - 16px); max-height: calc(100dvh - 16px); }
+  .encyclopedia-close, .board__close { min-width: 44px; min-height: 44px; }
+}
+
+/* ==========================================================================
+   ИГРОВОЙ ЭКРАН (game.php)
+   ========================================================================== */
+@media (max-width: 1040px) {
+  /* Карточка и рабочая зона идут столбиком — карточка на всю ширину, как и задания */
+  .pixel-dossier { max-width: none !important; }
+}
+
+@media (max-width: 900px) {
+  .pixel-ruled-row--empty { display: none !important; }
+  /* Иконки диагнозов: компактный квадрат слева, текст справа */
+  .diag-grid { gap: 8px; }
+  .diag-btn {
+    flex-direction: row !important;
+    justify-content: flex-start !important;
+    align-items: center;
+    gap: 14px !important;
+    min-height: 68px;
+    padding: 8px 14px !important;
+    text-align: left;
+  }
+  .diag-icon--pixel {
+    flex: 0 0 52px;
+    width: 52px;
+    height: 52px;
+    display: grid;
+    place-items: center;
+  }
+  .diag-icon--pixel svg { width: 100%; height: 100%; display: block; }
+  .diag-label { text-align: left !important; }
+}
+
+@media (max-width: 600px) {
+  /* --- HUD: 1 строка — логотип и кнопки, 2 строка — 4 показателя сеткой --- */
+  .hud {
+    display: grid !important;
+    grid-template-columns: auto 1fr;
+    grid-template-areas: "left right" "stats stats";
+    align-items: center;
+    gap: 8px 10px !important;
+    padding: 8px 12px calc(8px) !important;
+    padding-top: calc(8px + env(safe-area-inset-top)) !important;
+  }
+  .hud__left  { grid-area: left; }
+  .hud__right { grid-area: right; justify-self: end; flex-wrap: nowrap !important; gap: 6px !important; }
+  .hud__stats {
+    grid-area: stats;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, .85fr) minmax(0, 1.3fr);
+    gap: 5px !important;
+    width: 100%;
+    margin: 0 !important;
+  }
+  .hud__cell {
+    min-width: 0 !important;
+    padding: 4px 6px 5px;
+    border: 1px solid rgba(127, 214, 176, .2);
+    background: rgba(5, 9, 13, .55);
+  }
+  .hud__cell--rep { min-width: 0 !important; }
+  .hud__label { font-size: 11px !important; line-height: 1.2 !important; letter-spacing: .02em !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hud__value { font-size: 15px !important; line-height: 1.2; }
+  .rep-bar { margin-top: 3px; }
+  .hud__btn, .hud__right .snd-btn { width: 38px !important; height: 38px !important; }
+  .hud__btn--cabinet, .hud__btn--story { width: auto !important; padding: 0 10px !important; font-size: 14px !important; }
+
+  /* --- Раскладка --- */
+  .lay { padding: 10px 10px calc(28px + env(safe-area-inset-bottom)) !important; }
+  .screen { gap: 12px !important; }
+  .work { padding: 14px !important; }
+  .work__head { margin-bottom: 12px; }
+  .work__title { font-size: 19px !important; }
+  .work__sub { font-size: 14.5px !important; line-height: 1.45 !important; }
+
+  /* --- Карточка пациента --- */
+  .pixel-dossier__toolbar { flex-wrap: wrap; gap: 6px; padding: 0; }
+  .pixel-palette-btn { min-height: 32px; padding: 4px 8px; font-size: 12px; }
+  .pixel-fio-row { flex-direction: column; align-items: flex-start; gap: 3px; }
+  .pixel-fio-underline { width: 100%; }
+  .pixel-fio-value { white-space: normal; overflow: visible; font-size: 15px; line-height: 1.3; }
+  .pixel-age-line { font-size: 13px; }
+  .pixel-ruled-row--empty { display: none !important; }
+  .pixel-badge { font-size: 16px; padding: 6px 12px; }
+
+  /* --- Лечение: большие зоны касания --- */
+  .treat { gap: 8px; }
+  .treat-btn { min-height: 50px; padding: 12px 14px !important; }
+  .treat-seq { gap: 6px; padding: 10px; }
+  .treat-slot { padding: 6px 9px; font-size: 13px !important; }
+
+  /* --- Звонок диспетчера --- */
+  .call { padding: 16px !important; }
+  .call__dialogue-row { gap: 12px; }
+  .call-opt { min-height: 56px; padding: 12px 14px !important; }
+
+  /* --- Всплывающее сообщение: на всю ширину снизу --- */
+  .toast {
+    left: 10px !important;
+    right: 10px;
+    bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+    max-width: none !important;
+    transform: translateY(14px) !important;
+    font-size: 15px !important;
+    line-height: 1.4;
+  }
+  .toast.is-on { transform: translateY(0) !important; }
+
+  /* --- Модалки паузы и финала --- */
+  .modal { padding: 10px !important; align-items: center; }
+  .modal__card { max-height: calc(100dvh - 20px) !important; padding: 18px !important; -webkit-overflow-scrolling: touch; }
+  .modal__actions .btn { min-height: 48px; }
+  .final__score-value { font-size: 34px; }
+}
+
+/* ==========================================================================
+   УЧЕБНАЯ ОПЕРАЦИЯ (operation.php)
+   ========================================================================== */
+@media (max-width: 760px) {
+  .op-hud {
+    display: grid !important;
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "brand snd" "stats stats";
+    align-items: center;
+    gap: 8px 10px !important;
+    padding: 8px 12px !important;
+    padding-top: calc(8px + env(safe-area-inset-top)) !important;
+  }
+  .op-brand { grid-area: brand; min-width: 0; }
+  .op-brand b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .op-hud .snd-slot { grid-area: snd; }
+  .op-hud .snd { margin-left: 0 !important; }
+  .op-hud__stats {
+    grid-area: stats;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px !important;
+    width: 100%;
+  }
+  .op-hud__stats > span {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 4px;
+    padding: 4px 8px;
+    border: 1px solid rgba(127, 214, 176, .2);
+    background: rgba(5, 9, 13, .55);
+    white-space: nowrap;
+    font-size: 11px !important;
+  }
+  .op-hud__stats b { margin-left: 0 !important; font-size: 15px !important; }
+
+  .operation-main { width: calc(100% - 16px) !important; padding-bottom: calc(24px + env(safe-area-inset-bottom)) !important; }
+  .op-board--dnd { padding: 10px !important; }
+  .op-final { padding: 10px !important; }
+  .op-final__card { max-height: calc(100dvh - 20px); overflow-y: auto; padding: 18px !important; }
+  .op-final__actions { flex-direction: column; }
+  .op-final__actions .op-button { min-height: 48px; width: 100%; }
+}
+@media (max-width: 380px) {
+  .op-hud__stats > span { flex-direction: column; align-items: flex-start; gap: 0; }
+}
+
+/* ==========================================================================
+   ПРАВИЛА и старые страницы (rules.php, patient.php, diagnosis.php)
+   ========================================================================== */
+@media (max-width: 600px) {
+  .rules-page { padding: 12px !important; }
+  .rules-nav {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap;
+    align-items: stretch !important;
+    gap: 8px;
+  }
+  .rules-nav .btn { flex: 1 1 0; min-height: 46px; padding-left: 8px; padding-right: 8px; justify-content: center; white-space: nowrap; }
+  .rules-nav .snd-slot { flex: 0 0 auto; display: flex; align-items: center; }
+  .rules-block { padding: 16px !important; }
+
+  /* Таблица штрафов — горизонтальная прокрутка вместо сжатия в столбик */
+  .rules-table-wrap, .rules-block:has(.rules-table) { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .rules-table th, .rules-table td { padding-left: 8px !important; padding-right: 8px !important; }
+}
+
+/* ==========================================================================
+   Сюжетные окна (story-dialogue / story-line) — общий запас по краям
+   ========================================================================== */
+@media (max-width: 600px) {
+  .story-overlay, .sl-overlay { padding: 8px !important; }
+}
+@media (max-width: 380px) {
+  .rules-page { padding: 10px !important; }
+  .rules-nav { gap: 6px; }
+  .rules-nav .btn { font-size: 14px !important; padding-left: 6px; padding-right: 6px; }
+}

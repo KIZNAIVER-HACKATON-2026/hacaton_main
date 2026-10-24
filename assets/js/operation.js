@@ -1,46 +1,11 @@
-/* Учебный режим иммобилизации: схемы, порядок действий и запись результата. */
+/* Случайно назначенный учебный сценарий операции, схемы и запись результата. */
 (function () {
   'use strict';
   var DATA = window.OPERATION || {};
   if (!DATA.nick) return;
 
-  var steps = [
-    {
-      title: 'Первичная проверка',
-      description: 'До фиксации в учебном сценарии оцениваем состояние кисти и уточняем жалобы.',
-      correct: 'Проверить цвет, чувствительность и движение пальцев',
-      wrong: ['Сразу затянуть повязку', 'Попросить продолжить нагрузку'],
-      note: 'Первичный контроль выполнен: кисть можно безопасно фиксировать на схеме.'
-    },
-    {
-      title: 'Защита ткани',
-      description: 'Следующим шагом создаём мягкий защитный слой на схеме.',
-      correct: 'Аккуратно добавить мягкую подкладку',
-      wrong: ['Пропустить подкладку', 'Плотно прижать твёрдую шину к коже'],
-      note: 'Подкладка добавлена: на схеме появилась защитная прослойка.'
-    },
-    {
-      title: 'Положение для фиксации',
-      description: 'Выбираем нейтральное, удобное положение и размещаем учебную шину.',
-      correct: 'Уложить шину и сохранить удобное положение руки',
-      wrong: ['Резко выпрямить руку', 'Менять положение до ощущения боли'],
-      note: 'Шина размещена: рука остаётся в нейтральном положении.'
-    },
-    {
-      title: 'Закрепление',
-      description: 'Фиксируем конструкцию равномерно и без чрезмерного давления.',
-      correct: 'Закрепить бинтом без перетягивания',
-      wrong: ['Затянуть бинт максимально туго', 'Оставить шину незакреплённой'],
-      note: 'Фиксация закреплена: на схеме видна мягкая бинтовая повязка.'
-    },
-    {
-      title: 'Контроль после фиксации',
-      description: 'Финальный шаг — убедиться, что кисть остаётся тёплой и чувствительной.',
-      correct: 'Повторно проверить пальцы и комфорт фиксации',
-      wrong: ['Сразу закончить сценарий', 'Скрыть кисть полностью под повязкой'],
-      note: 'Контроль завершён. Учебная фиксация готова к передаче следующей команде.'
-    }
-  ];
+  var scenario = DATA.scenario || {};
+  var steps = Array.isArray(scenario.steps) ? scenario.steps : [];
 
   var state = { index: 0, score: 0, rep: 100, mistakes: 0, remaining: 180, finished: false, timer: null, token: uuid() };
   var el = {
@@ -50,6 +15,31 @@
     scene: document.getElementById('arm-scene'), note: document.getElementById('visual-note'),
     final: document.getElementById('op-final'), finalLabel: document.getElementById('op-final-label'), finalTitle: document.getElementById('op-final-title'), finalText: document.getElementById('op-final-text'), finalScore: document.getElementById('op-final-score'), finalAccuracy: document.getElementById('op-final-accuracy'), finalReward: document.getElementById('op-final-reward'), finalSave: document.getElementById('op-final-save')
   };
+
+  var sceneTemplates = {
+    appendectomy: '<svg class="op-scene__svg" viewBox="0 0 320 200" role="img" aria-label="Схема лапароскопического тренажёра"><rect width="320" height="200" rx="14" fill="#102126"/><rect x="112" y="27" width="96" height="145" rx="38" fill="#d8c1b0" stroke="#8c786b" stroke-width="4"/><path d="M129 54h62v74h-62z" fill="#c5b2a3"/><circle cx="145" cy="91" r="10" fill="#78c7a0"/><circle cx="175" cy="91" r="10" fill="#78c7a0"/><circle cx="160" cy="119" r="10" fill="#78c7a0"/><path d="M48 58h42v52H48z" fill="#254b50" stroke="#7fd6b0" stroke-width="3"/><path d="M58 74h22m-22 11h22m-22 11h14" stroke="#d6efe4" stroke-width="4"/></svg>',
+    osteosynthesis: '<svg class="op-scene__svg" viewBox="0 0 320 200" role="img" aria-label="Схема внешней фиксации на манекене"><rect width="320" height="200" rx="14" fill="#102126"/><rect x="36" y="83" width="246" height="48" rx="24" fill="#d8c1b0" stroke="#8c786b" stroke-width="4"/><rect x="90" y="70" width="151" height="75" rx="19" fill="#81969a" stroke="#dce6e3" stroke-width="4"/><path d="M112 107h106" stroke="#d7e5e2" stroke-width="10" stroke-linecap="round"/><circle cx="126" cy="91" r="5" fill="#f0a95c"/><circle cx="205" cy="91" r="5" fill="#f0a95c"/><circle cx="126" cy="124" r="5" fill="#f0a95c"/><circle cx="205" cy="124" r="5" fill="#f0a95c"/><rect x="251" y="88" width="38" height="36" rx="13" fill="#d8c1b0" stroke="#8c786b" stroke-width="4"/></svg>',
+    cholecystectomy: '<svg class="op-scene__svg" viewBox="0 0 320 200" role="img" aria-label="Абстрактная схема лапароскопической операционной"><rect width="320" height="200" rx="14" fill="#102126"/><rect x="113" y="27" width="94" height="145" rx="37" fill="#d8c1b0" stroke="#8c786b" stroke-width="4"/><rect x="126" y="60" width="68" height="76" rx="18" fill="#96b8ae"/><circle cx="139" cy="80" r="8" fill="#f0a95c"/><circle cx="181" cy="80" r="8" fill="#f0a95c"/><circle cx="160" cy="116" r="8" fill="#f0a95c"/><path d="M45 58h47v56H45z" fill="#254b50" stroke="#7fd6b0" stroke-width="3"/><path d="M54 72h29m-29 12h29m-29 12h21" stroke="#d6efe4" stroke-width="4"/><path d="M92 85h25m90 0h24" stroke="#7fd6b0" stroke-width="3" stroke-dasharray="5 5"/></svg>',
+    cesarean: '<svg class="op-scene__svg" viewBox="0 0 320 200" role="img" aria-label="Схема операционной и пеленального места"><rect width="320" height="200" rx="14" fill="#102126"/><rect x="55" y="45" width="174" height="108" rx="19" fill="#d8c1b0" stroke="#8c786b" stroke-width="4"/><path d="M65 91h154v52H65z" fill="#6e9eaa"/><path d="M81 105h122v30H81z" fill="#8bb8c0"/><rect x="235" y="87" width="53" height="55" rx="8" fill="#d5e7e3" stroke="#7fd6b0" stroke-width="3"/><rect x="243" y="99" width="37" height="29" rx="11" fill="#f0e3d5"/><path d="M251 113h20m-10-10v20" stroke="#7fd6b0" stroke-width="3"/><circle cx="75" cy="59" r="7" fill="#f0a95c"/><circle cx="208" cy="59" r="7" fill="#f0a95c"/></svg>'
+  };
+
+  function setupScene() {
+    var visual = sceneTemplates[scenario.visual] ? scenario.visual : 'appendectomy';
+    el.scene.className = 'arm-scene op-scene op-scene--' + visual;
+    el.scene.innerHTML = sceneTemplates[visual] + '<div class="op-scene__progress" aria-hidden="true">' +
+      steps.map(function () { return '<i></i>'; }).join('') + '</div>';
+    el.note.textContent = scenario.note || 'Неграфическая схема учебного тренажёра.';
+    updateSceneProgress();
+  }
+
+  function updateSceneProgress() {
+    if (!el.scene) return;
+    el.scene.setAttribute('data-step', String(state.index));
+    Array.prototype.forEach.call(el.scene.querySelectorAll('.op-scene__progress i'), function (tick, index) {
+      tick.classList.toggle('is-done', index < state.index);
+      tick.classList.toggle('is-current', index === state.index && !state.finished);
+    });
+  }
 
   function uuid() {
     if (window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID();
@@ -86,9 +76,9 @@
       state.score += 80;
       el.feedback.textContent = 'Верно. ' + steps[state.index].note;
       el.feedback.className = 'op-feedback is-good';
-      el.scene.className = 'arm-scene cast-step-' + (state.index + 1);
       el.note.textContent = steps[state.index].note;
       state.index += 1;
+      updateSceneProgress();
       renderChecklist(); renderHud();
       setTimeout(renderStep, 750);
     } else {
@@ -110,14 +100,33 @@
     state.finished = true; clearInterval(state.timer);
     var accuracy = Math.round(steps.length / (steps.length + state.mistakes) * 100);
     el.finalLabel.textContent = success ? 'Сценарий завершён' : 'Сценарий остановлен';
-    el.finalTitle.textContent = success ? 'Фиксация выполнена' : 'Нужна дополнительная тренировка';
-    el.finalText.textContent = success ? 'Все пять этапов выполнены в правильной последовательности. Это учебный тренажёр, а не медицинская инструкция.' : 'Таймер или точность закончились раньше. Повтори сценарий и сохрани спокойный порядок действий.';
+    el.finalTitle.textContent = success ? 'Сценарий завершён' : 'Нужна дополнительная тренировка';
+    el.finalText.textContent = success ? 'Все ' + steps.length + ' этапов сценария «' + scenario.title + '» выполнены. Это неграфический учебный тренажёр, а не медицинская инструкция.' : 'Таймер или точность закончились раньше. Повтори случайно назначенный сценарий и следуй чек-листу команды.';
     el.finalScore.textContent = state.score;
     el.finalAccuracy.textContent = accuracy + '%';
     el.finalReward.textContent = success ? '+90 ₽ · +50 XP' : '+20 ₽ · +10 XP';
     el.finalSave.textContent = 'Записываем результат и прогресс кабинета…';
-    el.final.hidden = false;
     submit(success);
+
+    var debrief = success ? [
+      { speaker: 'ilya', text: 'Отлично, все этапы выполнены в нужной последовательности. Это тренировка на манекене: спокойно закрепили навык без риска для пациента.' },
+      { speaker: 'vera', text: 'Результат записан. Следующий шаг — продолжать смены и постепенно готовить подстанцию к большему потоку.' }
+    ] : [
+      { speaker: 'ilya', text: 'Ничего страшного: это учебный сценарий. Ошибки здесь помогают заметить этап, который стоит повторить.' },
+      { speaker: 'ilya', text: 'Когда будешь готов, повтори тренировку. На подстанции я помогу разобраться.' }
+    ];
+    var storyKey = success ? 'operation-debrief-success' : 'operation-debrief-retry';
+    function revealFinal() {
+      el.final.hidden = false;
+      var firstAction = document.getElementById('op-again');
+      if (firstAction) firstAction.focus();
+    }
+    if (window.StoryDialogue) {
+      window.StoryDialogue.showOnce(storyKey, debrief, { nickname: DATA.nick, title: success ? 'Сюжет · разбор тренировки' : 'Сюжет · поддержка наставника' })
+        .then(revealFinal);
+    } else {
+      revealFinal();
+    }
   }
   function submit(success) {
     if (!DATA.endpoint || state.score <= 0) { el.finalSave.textContent = 'Результат без очков не отправлен в таблицу.'; return; }
@@ -126,6 +135,23 @@
       .then(function (data) { el.finalSave.textContent = data && data.ok ? 'Результат сохранён. Место в топе: #' + (data.rank || '—') + '. Прогресс обновлён в личном кабинете.' : 'Не удалось сохранить результат: база недоступна.'; })
       .catch(function () { el.finalSave.textContent = 'Нет связи: результат не сохранён.'; });
   }
-  renderStep();
-  state.timer = setInterval(tick, 1000);
+  function startScenario() {
+    renderStep();
+    state.timer = setInterval(tick, 1000);
+  }
+
+  function showTrainingBriefing() {
+    var progress = DATA.storyProgress || {};
+    if (!window.StoryDialogue || Number(progress.operations_finished) > 0) {
+      startScenario();
+      return;
+    }
+    window.StoryDialogue.showOnce('operation-training-briefing', [
+      { speaker: 'ilya', text: 'Добро пожаловать в учебную зону. Здесь работает манекен, а не пациент: сначала читаем условие, затем выбираем действия по порядку.' },
+      { speaker: 'ilya', text: 'Таймер начнётся после брифинга. Если понадобится, можно сразу показать текст полностью или пропустить диалог.' }
+    ], { nickname: DATA.nick, title: 'Сюжет · тренировка с наставником' }).then(startScenario);
+  }
+
+  setupScene();
+  showTrainingBriefing();
 })();

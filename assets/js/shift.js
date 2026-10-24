@@ -18,6 +18,7 @@
   var ENDPOINTS = DATA.endpoints || {};
 
   var el = {};
+  var stopCallTyping = null;
   var S = {
     phase: 'diag',          // diag | treat | call | over
     index: 0,               // текущий пациент
@@ -365,7 +366,17 @@
     el.screenCall.classList.remove('hidden');
 
     el.callTitle.textContent = call.title || 'Звонок диспетчера';
-    el.callText.textContent = call.text || '';
+    var speakerId = call.speaker || 'vera';
+    if (el.callSpeaker) {
+      el.callSpeaker.textContent = call.speakerName || (window.StoryDialogue ? window.StoryDialogue.characterName(speakerId) : 'Вера · диспетчер');
+    }
+    if (el.callAvatar && window.StoryDialogue) el.callAvatar.innerHTML = window.StoryDialogue.avatarMarkup(speakerId);
+    if (stopCallTyping) stopCallTyping();
+    if (window.StoryDialogue && window.StoryDialogue.typeInto) {
+      stopCallTyping = window.StoryDialogue.typeInto(el.callText, call.text || '', 15);
+    } else {
+      el.callText.textContent = call.text || '';
+    }
 
     el.callOptions.innerHTML = (call.options || []).map(function (o, i) {
       return '<button class="call-opt" type="button" data-i="' + i + '">' +
@@ -390,6 +401,7 @@
   }
 
   function chooseCall(call, i, btn) {
+    if (stopCallTyping) { stopCallTyping(); stopCallTyping = null; }
     var opt = (call.options || [])[i];
     if (!opt) return;
 
@@ -623,6 +635,8 @@
       screenPatient: $('screen-patient'),
       screenCall: $('screen-call'),
       callTitle: $('call-title'),
+      callAvatar: $('call-avatar'),
+      callSpeaker: $('call-speaker'),
       callText: $('call-text'),
       callOptions: $('call-options'),
 
@@ -655,7 +669,7 @@
 
     document.addEventListener('keydown', function (e) {
       var isPauseKey = e.key === 'p' || e.key === 'P' || e.key === 'з' || e.key === 'З' || e.key === 'Escape';
-      if (!isPauseKey || S.finished) return;
+      if (!isPauseKey || S.finished || (window.StoryDialogue && window.StoryDialogue.isOpen())) return;
 
       if (S.paused) {
         resume();
@@ -721,21 +735,90 @@
     }
   }
 
+  function shiftStoryBeat() {
+    var p = DATA.storyProgress || {};
+    var shifts = Number(p.shifts_finished) || 0;
+    var operationSuccess = Number(p.operations_success) || 0;
+    var hospitalLevel = Number(p.hospital_level) || 0;
+    if (!NICK || !window.StoryDialogue) return null;
+
+    if (shifts >= 3 && hospitalLevel >= 2) {
+      return {
+        key: 'story-finale', title: 'Сюжет · до рассвета',
+        lines: [
+          { speaker: 'vera', text: 'Смена 03, хорошая работа. Районные пункты снова принимают обращения, а поток пациентов распределён спокойнее.' },
+          { speaker: 'ilya', text: 'Триаж-пост и тренировка помогли навести порядок. Подстанция готова к следующему дежурству.' },
+          { speaker: 'vera', text: 'До рассвета справились. Эта история продолжается с каждой новой сменой.' }
+        ]
+      };
+    }
+    if (shifts === 0) {
+      return {
+        key: 'story-first-shift', title: 'Сюжет · первая смена',
+        lines: [
+          { speaker: 'vera', text: 'Смена 03, проверка связи. После ночного шторма несколько обращений перенаправили к нам.' },
+          { speaker: 'vera', text: 'Сегодня ты впервые в этой бригаде. Не спеши: внимательно смотри на показатели и действуй по протоколу.' },
+          { speaker: 'ilya', text: 'Я Илья, наставник на линии. Учебную тренировку можно пройти отдельно в кабинете — здесь работаем спокойно и последовательно.' }
+        ]
+      };
+    }
+    if (operationSuccess === 0) {
+      return {
+        key: 'story-training-invitation', title: 'Сюжет · сообщение диспетчера',
+        lines: [
+          { speaker: 'vera', text: 'Первую смену провели. Когда будет удобно, открой учебную операцию в кабинете: Илья подготовил манекен для тренировки фиксации.' },
+          { speaker: 'ilya', text: 'Это учебный сценарий без спешки. Разберём этапы по порядку, а затем вернёмся к обычным вызовам.' }
+        ]
+      };
+    }
+    if (shifts >= 2 && hospitalLevel < 2) {
+      return {
+        key: 'story-triage-request', title: 'Сюжет · подстанция',
+        lines: [
+          { speaker: 'ilya', text: 'Тренировку прошли. Теперь подстанции поможет триаж-пост: он упростит первичную сортировку и организацию приёма.' },
+          { speaker: 'vera', text: 'Улучшения доступны во вкладке «Развитие» кабинета. Можно продолжить смену и вернуться к ним позже.' }
+        ]
+      };
+    }
+    if (operationSuccess > 0 && shifts < 3) {
+      return {
+        key: 'story-after-training', title: 'Сюжет · новая смена',
+        lines: [
+          { speaker: 'ilya', text: 'Хорошо отработали учебную фиксацию. Важно сохранять тот же спокойный порядок и на следующих сценариях.' },
+          { speaker: 'vera', text: 'Подстанция постепенно готовится к большему потоку. Начинаем дежурство, я буду на связи.' }
+        ]
+      };
+    }
+    return null;
+  }
+
+  function beginShiftWithStory() {
+    var beat = shiftStoryBeat();
+    if (!beat) { beginPatient(); startTimer(); return; }
+    window.StoryDialogue.showOnce(beat.key, beat.lines, { nickname: NICK, title: beat.title })
+      .then(function () {
+        if (S.finished) return;
+        beginPatient();
+        startTimer();
+      });
+  }
+
   function init() {
     bind();
     initPaletteSwitcher();
 
     if (restoreFromSave()) {
-      // продолжаем с сохранённого пациента
+      // Продолжаем сохранённую смену без повторного вступления.
       renderPatient();
       renderDiagnoses();
-    } else {
-      beginPatient();
+      renderHud();
+      startTimer();
+      autosave();
+      return;
     }
 
     renderHud();
-    startTimer();
-    autosave();
+    beginShiftWithStory();
   }
 
   if (document.readyState === 'loading') {

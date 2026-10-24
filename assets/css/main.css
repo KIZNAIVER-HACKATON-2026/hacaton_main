@@ -168,7 +168,12 @@ body.landing {
   align-items: center;
   gap: 12px;
   min-width: 0;
+  color: var(--text);
+  text-decoration: none;
 }
+.brand:visited,
+.brand:hover,
+.brand:focus-visible { color: var(--text); text-decoration: none; }
 
 .brand__mark {
   width: 38px;

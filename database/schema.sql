@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS `saves` (
   DEFAULT CHARACTER SET utf8mb3
   COLLATE utf8mb3_general_ci;
 
--- Справочник шести диагнозов, которые игра использует в выборе ответа.
+-- Справочник двенадцати диагнозов, используемых в учебной смене.
 CREATE TABLE IF NOT EXISTS `diagnoses` (
   `diagnosis_id` TINYINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `title` VARCHAR(80) NOT NULL,

@@ -1,0 +1,346 @@
+/* Pixel-terminal finish for the profile window, matched to the leaderboard board. */
+#cabinet.cabinet {
+  position: relative;
+  padding: 22px;
+  border: 4px solid #050b0d !important;
+  border-color: #050b0d !important;
+  outline: 3px solid #234d42;
+  outline-offset: -7px;
+  border-radius: 0 !important;
+  background-color: rgba(10, 18, 22, .96) !important;
+  background-image: repeating-linear-gradient(180deg,
+    transparent 0, transparent 2px,
+    rgba(0, 0, 0, .20) 2px, rgba(0, 0, 0, .20) 4px) !important;
+  box-shadow: inset 0 0 0 7px #050b0d, 6px 6px 0 rgba(0, 0, 0, .75) !important;
+  clip-path: polygon(
+    0 10px, 3px 10px, 3px 6px, 6px 6px, 6px 3px, 10px 3px, 10px 0,
+    calc(100% - 10px) 0, calc(100% - 10px) 3px, calc(100% - 6px) 3px, calc(100% - 6px) 6px, calc(100% - 3px) 6px, calc(100% - 3px) 10px, 100% 10px,
+    100% calc(100% - 10px), calc(100% - 3px) calc(100% - 10px), calc(100% - 3px) calc(100% - 6px), calc(100% - 6px) calc(100% - 6px), calc(100% - 6px) calc(100% - 3px), calc(100% - 10px) calc(100% - 3px), calc(100% - 10px) 100%,
+    10px 100%, 10px calc(100% - 3px), 6px calc(100% - 3px), 6px calc(100% - 6px), 3px calc(100% - 6px), 3px calc(100% - 10px), 0 calc(100% - 10px)
+  );
+  image-rendering: pixelated;
+}
+
+#cabinet,
+#cabinet * {
+  font-family: var(--pixel-font, "Pixellari", sans-serif) !important;
+  font-synthesis: weight;
+  border-radius: 0 !important;
+}
+
+#cabinet .cabinet__head,
+#cabinet .cabinet__login {
+  padding: 14px 16px;
+  border: 2px solid #23473f;
+  background: rgba(8, 20, 22, .82);
+  box-shadow: 3px 3px 0 #000;
+}
+#cabinet .cabinet__eyebrow { font-size: 13px !important; color: #7fd6b0; }
+#cabinet .cabinet__head h2,
+#cabinet .cabinet__login h2 { font-size: clamp(25px, 3vw, 34px) !important; line-height: 1.2; }
+#cabinet .cabinet__head p:not(.cabinet__eyebrow),
+#cabinet .cabinet__login p { font-size: 16px !important; line-height: 1.55; color: #afc2b9; }
+#cabinet .cabinet__switch,
+#cabinet .cabinet-login-form .btn-solid,
+#cabinet .upgrade-buy {
+  border: 2px solid #3b7468 !important;
+  border-radius: 0 !important;
+  box-shadow: 2px 2px 0 #000;
+  font-size: 14px !important;
+}
+#cabinet .cabinet__switch { padding: 9px 12px; background: #081415; color: #d0ddd7; }
+#cabinet .cabinet__switch:hover { background: #132626; border-color: #7fd6b0 !important; }
+
+#cabinet .cabinet-login-form {
+  padding: 16px;
+  border: 2px solid #23473f;
+  border-radius: 0 !important;
+  background: #081215;
+  box-shadow: 3px 3px 0 #000;
+}
+#cabinet .cabinet-login-form label { font-size: 13px !important; color: #afc2b9; }
+#cabinet .cabinet-login-form input { border-radius: 0 !important; font-size: 16px !important; }
+#cabinet .cabinet-login-form small,
+#cabinet .cabinet__error { font-size: 13px !important; color: #93a99f; }
+#cabinet .cabinet-login-form .btn-solid { background: #18382f; color: #f0f5f2; }
+
+#cabinet .cabinet-overview { gap: 10px; }
+#cabinet .cabinet-stat,
+#cabinet .cabinet-panel,
+#cabinet .progression {
+  border: 2px solid #1d3b38 !important;
+  border-radius: 0 !important;
+  background: rgba(8, 18, 21, .94) !important;
+  box-shadow: 3px 3px 0 #000 !important;
+}
+#cabinet .cabinet-stat { padding: 14px; }
+#cabinet .cabinet-stat span,
+#cabinet .cabinet-stat small { font-size: 12px !important; color: #afc2b9; }
+#cabinet .cabinet-stat b { font-size: 26px !important; text-shadow: 2px 2px 0 #000; }
+#cabinet .cabinet-layout { gap: 12px; }
+#cabinet .cabinet-panel,
+#cabinet .progression { padding: 16px; }
+#cabinet .cabinet-panel__head { padding-bottom: 10px; border-bottom: 2px solid #142a2b; }
+#cabinet .cabinet-panel__head p,
+#cabinet .progression__cols h4 { font-size: 13px !important; color: #93a99f; }
+#cabinet .cabinet-panel h3,
+#cabinet .progression h3 { font-size: 22px !important; line-height: 1.25; }
+#cabinet .cabinet-budget,
+#cabinet .cabinet-count,
+#cabinet .progression__level {
+  border: 2px solid #3b2c1f;
+  border-radius: 0 !important;
+  box-shadow: 2px 2px 0 #000;
+}
+#cabinet .cabinet-budget,
+#cabinet .cabinet-count { padding: 7px 9px; font-size: 13px !important; }
+#cabinet .game-mode {
+  gap: 10px;
+  padding: 12px;
+  border: 2px solid #142a2b !important;
+  border-radius: 0 !important;
+  background: #0a171a !important;
+  box-shadow: 2px 2px 0 #000;
+}
+#cabinet .game-mode:hover { border-color: #3b7468 !important; background: #122628 !important; }
+#cabinet .game-mode--operation { border-color: #3b2c1f !important; background: #171713 !important; }
+#cabinet .game-mode__icon {
+  width: 42px;
+  height: 42px;
+  border: 2px solid #23473f;
+  border-radius: 0 !important;
+  background: #081415;
+}
+#cabinet .cabinet-pixel-icon { display: block; width: 32px; height: 32px; image-rendering: pixelated; }
+#cabinet .game-mode b { font-size: 16px !important; }
+#cabinet .game-mode small { font-size: 13px !important; line-height: 1.4; color: #afc2b9; }
+#cabinet .game-mode i { font-size: 13px !important; }
+#cabinet .daily-mission {
+  border: 2px dashed #76522f;
+  border-radius: 0 !important;
+  background: rgba(27, 22, 15, .55);
+  padding: 11px;
+}
+#cabinet .daily-mission span,
+#cabinet .daily-mission small { font-size: 13px !important; }
+#cabinet .daily-mission b { font-size: 15px !important; }
+#cabinet .badge-list { gap: 7px; }
+#cabinet .badge-chip { padding: 7px 9px; border: 2px solid #76522f; border-radius: 0 !important; font-size: 13px !important; }
+#cabinet .cabinet-empty { font-size: 14px !important; }
+#cabinet .profile-details { border-top: 2px solid #142a2b; }
+#cabinet .profile-details span { font-size: 14px !important; }
+#cabinet .profile-details b { font-size: 15px !important; }
+#cabinet .progression { border-color: #3b2c1f !important; }
+#cabinet .progression__head > div > p:not(.cabinet__eyebrow) { font-size: 15px !important; line-height: 1.5; }
+#cabinet .progression__level { padding: 9px; border-color: #76522f; text-align: left; }
+#cabinet .progression__level span { font-size: 12px !important; }
+#cabinet .progression__level b { font-size: 22px !important; }
+#cabinet .upgrade-list { gap: 8px; }
+#cabinet .upgrade-row {
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 10px;
+  border: 2px solid #142a2b !important;
+  border-radius: 0 !important;
+  background: #081215 !important;
+  box-shadow: 2px 2px 0 #000;
+}
+#cabinet .upgrade-row.is-owned { border-color: #285b4f !important; background: #0c1d1b !important; }
+#cabinet .upgrade-row.is-ready { border-color: #76522f !important; }
+#cabinet .upgrade-row__icon { display: grid; place-items: center; width: 38px; height: 38px; border: 2px solid #23473f; background: #0b1c1c; }
+#cabinet .upgrade-row__icon .cabinet-pixel-icon { width: 30px; height: 30px; }
+#cabinet .upgrade-row b { font-size: 15px !important; }
+#cabinet .upgrade-row p { font-size: 13px !important; line-height: 1.4; }
+#cabinet .upgrade-row small,
+#cabinet .upgrade-state { font-size: 12px !important; line-height: 1.4; white-space: normal; }
+#cabinet .upgrade-buy { padding: 8px 9px; background: #322517; color: #ffdca5; cursor: pointer; }
+#cabinet .upgrade-buy:hover { background: #50391d; border-color: #f0a95c !important; }
+
+@media (max-width: 850px) {
+  #cabinet .cabinet__login { flex-direction: column; align-items: stretch; }
+  #cabinet .cabinet-login-form { width: 100%; }
+}
+@media (max-width: 560px) {
+  #cabinet.cabinet { padding: 15px; }
+  #cabinet .cabinet__head { flex-direction: column; }
+  #cabinet .cabinet__head, #cabinet .cabinet__login { padding: 12px; }
+  #cabinet .cabinet-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #cabinet .game-mode-grid { grid-template-columns: 1fr; }
+  #cabinet .upgrade-row { grid-template-columns: 38px minmax(0, 1fr); }
+  #cabinet .upgrade-row__action { grid-column: 2; text-align: left; }
+  #cabinet .progression__head { flex-direction: column; }
+  #cabinet .progression__level { width: 100%; }
+}
+
+/* Compact, keyboard-accessible cabinet sections. */
+#cabinet .cabinet-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 16px 0 0;
+  padding: 0 0 10px;
+  border-bottom: 3px solid #050b0d;
+  box-shadow: inset 0 -2px 0 #285448;
+}
+#cabinet .cabinet-tab {
+  min-height: 42px;
+  padding: 8px 14px;
+  border: 2px solid #23473f;
+  background: #081415;
+  color: #afc2b9;
+  box-shadow: 2px 2px 0 #000;
+  font-size: 15px !important;
+  line-height: 1.25;
+  cursor: pointer;
+  transition: background .14s, border-color .14s, color .14s, transform .14s;
+}
+#cabinet .cabinet-tab:hover { border-color: #7fd6b0; color: #e8f0ea; background: #102321; }
+#cabinet .cabinet-tab.is-active {
+  border-color: #f0a95c;
+  background: #261c14;
+  color: #f3c860;
+  box-shadow: 2px 2px 0 #000, inset 0 0 0 1px rgba(240, 169, 92, .15);
+}
+#cabinet .cabinet-tab:focus-visible { outline: 2px solid #f0a95c; outline-offset: 3px; }
+#cabinet .cabinet-tab-panel { padding-top: 14px; }
+#cabinet .cabinet-tab-panel[hidden] { display: none !important; }
+#cabinet .cabinet-tab-hint {
+  margin: 12px 0 0;
+  padding: 11px 13px;
+  border-left: 3px solid #3b7468;
+  background: rgba(8, 20, 22, .7);
+  color: #afc2b9;
+  font-size: 14px !important;
+  line-height: 1.5;
+}
+#cabinet .progression__summary { display: grid; gap: 8px; min-width: 150px; }
+#cabinet .cabinet-resources {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 9px 11px;
+  border: 2px solid #23473f;
+  background: #081415;
+  box-shadow: 2px 2px 0 #000;
+}
+#cabinet .cabinet-resources span { color: #93a99f; font-size: 12px !important; }
+#cabinet .cabinet-resources b { color: #f0a95c; font-size: 14px !important; white-space: nowrap; }
+@media (max-width: 560px) {
+  #cabinet .cabinet-tabs { gap: 5px; }
+  #cabinet .cabinet-tab { flex: 1 1 calc(50% - 5px); padding: 8px 6px; font-size: 14px !important; }
+  #cabinet .progression__summary { grid-template-columns: 1fr 1fr; width: 100%; }
+  #cabinet .cabinet-resources { grid-template-columns: 1fr auto; }
+}
+
+/* Encyclopedia modal: full, searchable reference with optional reading progress. */
+#cabinet .cabinet__head-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+#cabinet .encyclopedia-trigger { align-items: center; gap: 8px; min-height: 42px; cursor: pointer; color: #dff2e8; background: #10221f; }
+#cabinet .encyclopedia-trigger:hover { color: #fff0d4; background: #1a3028; }
+.encyclopedia-trigger__icon { width: 20px; height: 20px; flex: 0 0 auto; image-rendering: pixelated; }
+.encyclopedia-trigger__count { padding: 3px 5px; border: 1px solid #76522f; color: #f0a95c; font-size: 12px; }
+
+.encyclopedia-modal,
+.encyclopedia-modal * { box-sizing: border-box; font-family: var(--pixel-font, "Pixellari", sans-serif); }
+.encyclopedia-modal { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: clamp(8px, 2.5vw, 28px); background: rgba(0, 5, 7, .88); backdrop-filter: blur(5px); }
+.encyclopedia-modal[hidden] { display: none !important; }
+body.encyclopedia-open { overflow: hidden; }
+.encyclopedia-window {
+  width: min(1120px, 100%);
+  max-height: min(94vh, 980px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 4px solid #050b0d;
+  outline: 3px solid #285448;
+  outline-offset: -8px;
+  background: repeating-linear-gradient(180deg, #0b1518 0, #0b1518 3px, #0a1316 3px, #0a1316 6px);
+  color: #e8f0ea;
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, .8), inset 0 0 0 7px #050b0d;
+  animation: encyclopedia-enter .16s steps(3, end) both;
+}
+@keyframes encyclopedia-enter { from { opacity: 0; transform: translateY(8px) scale(.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.encyclopedia-window__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: clamp(18px, 3vw, 28px) clamp(16px, 3vw, 30px) 16px; border-bottom: 2px solid #1d3b38; background: rgba(8, 20, 22, .94); }
+.encyclopedia-kicker { margin: 0 0 8px; color: #7fd6b0; font-size: 13px; line-height: 1.4; letter-spacing: .04em; }
+.encyclopedia-window__head h2 { margin: 0 0 7px; color: #f0a95c; font-size: clamp(23px, 3vw, 32px); line-height: 1.25; }
+.encyclopedia-window__head > div > p:last-child { max-width: 760px; margin: 0; color: #afc2b9; font-size: 14px; line-height: 1.55; }
+.encyclopedia-close { flex: 0 0 auto; width: 42px; height: 42px; border: 2px solid #3b7468; background: #081415; color: #e8f0ea; box-shadow: 2px 2px 0 #000; font-size: 28px; line-height: 1; cursor: pointer; }
+.encyclopedia-close:hover, .encyclopedia-close:focus-visible { outline: 2px solid #f0a95c; outline-offset: 2px; background: #193029; }
+.encyclopedia-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, .8fr); align-items: end; gap: 14px; padding: 15px clamp(16px, 3vw, 30px) 10px; }
+.encyclopedia-tabs { display: flex; flex-wrap: wrap; gap: 7px; }
+.encyclopedia-tab { min-height: 42px; padding: 8px 12px; border: 2px solid #23473f; background: #081415; color: #afc2b9; box-shadow: 2px 2px 0 #000; font-size: 15px; cursor: pointer; }
+.encyclopedia-tab span { margin-left: 5px; color: #f0a95c; font-size: 12px; }
+.encyclopedia-tab:hover { border-color: #7fd6b0; color: #fff; }
+.encyclopedia-tab.is-active { border-color: #f0a95c; background: #261c14; color: #f3c860; }
+.encyclopedia-tab:focus-visible, .encyclopedia-search input:focus-visible { outline: 2px solid #f0a95c; outline-offset: 2px; }
+.encyclopedia-search { display: grid; gap: 5px; color: #93a99f; font-size: 12px; }
+.encyclopedia-search input { width: 100%; min-height: 42px; padding: 9px 11px; border: 2px solid #23473f; border-radius: 0; background: #071014; color: #e8f0ea; font-size: 14px; }
+.encyclopedia-search input::placeholder { color: #738981; }
+.encyclopedia-status { display: grid; grid-template-columns: auto minmax(180px, 260px) 1fr; align-items: center; gap: 12px; margin: 0 clamp(16px, 3vw, 30px); padding: 9px 0 12px; border-bottom: 2px solid #142a2b; }
+.encyclopedia-status p { margin: 0; color: #afc2b9; font-size: 12px; line-height: 1.45; }
+.encyclopedia-progress { display: grid; gap: 5px; color: #7fd6b0; font-size: 12px; }
+.encyclopedia-progress__track { height: 8px; border: 1px solid #285448; background: #050b0d; }
+.encyclopedia-progress__track i { display: block; width: 0; height: 100%; background: repeating-linear-gradient(90deg, #7fd6b0 0 8px, #4d9c80 8px 12px); transition: width .2s steps(5, end); }
+.encyclopedia-status .encyclopedia-open-note { color: #80978e; font-size: 11px; text-align: right; }
+.encyclopedia-grid { flex: 1 1 auto; min-height: 0; overflow: auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: 11px; padding: 14px clamp(16px, 3vw, 30px) 18px; scrollbar-color: #3b7468 #081215; }
+.encyclopedia-grid[hidden], .encyclopedia-empty[hidden] { display: none !important; }
+.encyclopedia-entry { min-width: 0; padding: 12px; border: 2px solid #1d3b38; background: rgba(8, 18, 21, .94); box-shadow: 3px 3px 0 #000; }
+.encyclopedia-entry.is-read { border-color: #3b7468; }
+.encyclopedia-entry__head { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; align-items: center; gap: 9px; }
+.encyclopedia-entry__icon { display: grid; place-items: center; width: 42px; height: 42px; border: 2px solid #23473f; background: #071014; }
+.encyclopedia-pixel-icon { display: block; width: 32px; height: 32px; image-rendering: pixelated; }
+.encyclopedia-entry__title { min-width: 0; }
+.encyclopedia-entry__title p { margin: 0 0 3px; color: #7fd6b0; font-size: 10px; line-height: 1.4; letter-spacing: .03em; }
+.encyclopedia-entry__title h3 { margin: 0; color: #e8f0ea; font-size: 16px; line-height: 1.35; overflow-wrap: anywhere; }
+.encyclopedia-entry__state { align-self: start; padding: 4px 5px; border: 1px solid #3a3020; color: #ad9673; font-size: 10px; line-height: 1.3; white-space: nowrap; }
+.encyclopedia-entry.is-read .encyclopedia-entry__state { border-color: #285448; color: #7fd6b0; }
+.encyclopedia-entry__summary { margin: 10px 0; color: #b8c9c1; font-size: 13px; line-height: 1.55; }
+.encyclopedia-entry__details { border-top: 1px solid #1d3b38; }
+.encyclopedia-entry__details summary { padding: 9px 2px 2px; color: #f0a95c; font-size: 13px; cursor: pointer; list-style: none; }
+.encyclopedia-entry__details summary::-webkit-details-marker { display: none; }
+.encyclopedia-entry__details summary::before { content: "+ "; color: #7fd6b0; }
+.encyclopedia-entry__details[open] summary::before { content: "− "; }
+.encyclopedia-entry__details summary:focus-visible { outline: 2px solid #f0a95c; outline-offset: 2px; }
+.encyclopedia-entry__body { display: grid; gap: 10px; padding: 9px 3px 3px; }
+.encyclopedia-entry__section h4 { margin: 0 0 4px; color: #7fd6b0; font-size: 12px; }
+.encyclopedia-entry__section p { margin: 0; color: #b8c9c1; font-size: 13px; line-height: 1.55; }
+.encyclopedia-steps { display: grid; gap: 5px; margin: 6px 0 0; padding-left: 23px; color: #b8c9c1; font-size: 12px; line-height: 1.5; }
+.encyclopedia-steps li::marker { color: #f0a95c; }
+.encyclopedia-entry__section .encyclopedia-note { margin-top: 7px; color: #879b92; font-size: 11px; }
+.encyclopedia-empty { margin: auto; padding: 25px; color: #afc2b9; text-align: center; font-size: 15px; }
+.encyclopedia-window__foot { display: flex; justify-content: space-between; gap: 12px; padding: 10px clamp(16px, 3vw, 30px); border-top: 2px solid #1d3b38; background: #081215; color: #82978f; font-size: 11px; line-height: 1.45; }
+
+@media (max-width: 760px) {
+  .encyclopedia-window { max-height: 96vh; }
+  .encyclopedia-toolbar { grid-template-columns: 1fr; align-items: stretch; }
+  .encyclopedia-status { grid-template-columns: auto minmax(130px, 1fr); }
+  .encyclopedia-status .encyclopedia-open-note { grid-column: 1 / -1; text-align: left; }
+  .encyclopedia-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  #cabinet .cabinet__head-actions { justify-content: flex-start; }
+  #cabinet .cabinet__head-actions .cabinet__switch { white-space: normal; }
+  .encyclopedia-modal { padding: 5px; }
+  .encyclopedia-window { max-height: 98vh; border-width: 3px; outline-offset: -7px; }
+  .encyclopedia-window__head { gap: 8px; padding: 18px 13px 13px; }
+  .encyclopedia-kicker { font-size: 11px; }
+  .encyclopedia-window__head h2 { font-size: 22px; }
+  .encyclopedia-window__head > div > p:last-child { font-size: 12px; }
+  .encyclopedia-close { width: 36px; height: 36px; font-size: 24px; }
+  .encyclopedia-toolbar { gap: 10px; padding: 12px 13px 9px; }
+  .encyclopedia-tab { flex: 1 1 calc(50% - 5px); padding: 8px 5px; font-size: 13px; }
+  .encyclopedia-status { grid-template-columns: 1fr; gap: 7px; margin: 0 13px; }
+  .encyclopedia-status .encyclopedia-open-note { grid-column: auto; }
+  .encyclopedia-grid { padding: 10px 13px 14px; }
+  .encyclopedia-entry { padding: 10px; }
+  .encyclopedia-entry__head { grid-template-columns: 36px minmax(0, 1fr); gap: 7px; }
+  .encyclopedia-entry__icon { width: 36px; height: 36px; }
+  .encyclopedia-pixel-icon { width: 28px; height: 28px; }
+  .encyclopedia-entry__state { grid-column: 2; justify-self: start; padding: 3px 4px; }
+  .encyclopedia-entry__title h3 { font-size: 15px; }
+  .encyclopedia-window__foot { flex-direction: column; gap: 4px; padding: 9px 13px; font-size: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .encyclopedia-window { animation: none; }
+  .encyclopedia-progress__track i { transition: none; }
+}

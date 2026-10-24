@@ -25,10 +25,20 @@ $dispatches = shift_dispatches();
 $config    = shift_config();
 
 $save = null;
-if ($nick !== null) {
-    $player = db_find_player($nick);
-    if ($player) {
-        $save = db_load_save((int) $player['player_id']);
+$storyProgress = [
+    'shifts_finished' => 0,
+    'operations_finished' => 0,
+    'operations_success' => 0,
+    'hospital_level' => 0,
+];
+$player = db_find_player($nick);
+if ($player) {
+    $save = db_load_save((int) $player['player_id']);
+    $dashboard = db_player_dashboard((int) $player['player_id']);
+    if (!empty($dashboard['profile'])) {
+        foreach ($storyProgress as $key => $default) {
+            $storyProgress[$key] = (int) ($dashboard['profile'][$key] ?? $default);
+        }
     }
 }
 ?>
@@ -39,10 +49,11 @@ if ($nick !== null) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Смена — Смена 03</title>
   <link rel="stylesheet" href="assets/css/base.css?v=2.2">
-  <link rel="stylesheet" href="assets/css/game.css?v=2.2">
+  <link rel="stylesheet" href="assets/css/game.css?v=2.3">
   <link rel="stylesheet" href="assets/css/pixel-theme.css?v=2.2">
   <link rel="stylesheet" href="assets/css/pixel-window.css?v=2.2">
   <link rel="stylesheet" href="assets/css/readability.css?v=2.2">
+  <link rel="stylesheet" href="assets/css/story-dialogue.css?v=1.0">
 </head>
 <body class="game-body">
 
@@ -185,7 +196,10 @@ if ($nick !== null) {
         <span class="call__pulse" aria-hidden="true"></span>
         <span class="call__label" id="call-title">Звонок диспетчера</span>
       </div>
-      <p class="call__text" id="call-text">—</p>
+      <div class="call__dialogue-row">
+        <div class="call__avatar" id="call-avatar" aria-hidden="true"></div>
+        <div class="call__copy"><p class="call__speaker" id="call-speaker">Вера · диспетчер</p><p class="call__text" id="call-text">—</p></div>
+      </div>
       <div class="call__options" id="call-options"></div>
     </div>
   </section>
@@ -245,6 +259,7 @@ window.SHIFT = <?= json_encode([
     'dispatches' => $dispatches,
     'config'     => $config,
     'save'       => $save,
+    'storyProgress' => $storyProgress,
     'dbOk'       => data_db_ok(),
     'endpoints'  => [
         'save'  => 'api/save.php',
@@ -252,7 +267,8 @@ window.SHIFT = <?= json_encode([
     ],
 ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 </script>
-<script src="assets/js/pixel-art.js?v=2.2"></script>
-<script src="assets/js/shift.js?v=2.2"></script>
+<script src="assets/js/pixel-art.js?v=2.3"></script>
+<script src="assets/js/story-dialogue.js?v=1.0"></script>
+<script src="assets/js/shift.js?v=3.2"></script>
 </body>
 </html>

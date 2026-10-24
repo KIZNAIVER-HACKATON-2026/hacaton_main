@@ -333,7 +333,7 @@ function db_record_summary(int $playerId, int $recordId): ?array
     }
 }
 
-/** Справочник диагнозов из БД (6 записей из seed.sql). */
+/** Справочник диагнозов из БД (12 записей из seed.sql). */
 function db_diagnoses(): array
 {
     $pdo = db_or_null();

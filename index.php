@@ -13,6 +13,7 @@ $top = db_top_players(5);
 $stats = db_stats();
 $diagnoses = db_diagnoses();
 $nick = current_nickname();
+$encyclopedia = $nick !== null ? (require __DIR__ . '/includes/encyclopedia_data.php') : null;
 $dashboard = null;
 if ($nick !== null) {
     remember_nickname($nick);
@@ -30,10 +31,11 @@ $backgroundTier = $rank >= 1 && $rank <= 3 ? $rank : 4;
   <title>Смена 03 — учебный симулятор фельдшера</title>
   <meta name="description" content="Учебный симулятор ночной смены, операций и развития больницы.">
   <link rel="preload" as="image" href="assets/img/fon_main.webp" type="image/webp">
-  <link rel="stylesheet" href="assets/css/main.css?v=3.0">
+  <link rel="stylesheet" href="assets/css/main.css?v=3.1">
   <link rel="stylesheet" href="assets/css/cabinet.css?v=3.0">
   <link rel="stylesheet" href="assets/css/pixel-theme.css?v=3.0">
   <link rel="stylesheet" href="assets/css/readability.css?v=3.0">
+  <link rel="stylesheet" href="assets/css/cabinet-pixel.css?v=3.3">
 </head>
 <body class="landing" data-db="<?= $dbOk ? '1' : '0' ?>" data-rank="<?= $rank ?: '' ?>">
 <svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
@@ -98,15 +100,37 @@ $backgroundTier = $rank >= 1 && $rank <= 3 ? $rank : 4;
           <form id="cabinet-login-form" class="cabinet-login-form" novalidate autocomplete="off"><label for="cabinet-nick">Ник игрока</label><div class="cabinet-login-form__row"><input id="cabinet-nick" name="nickname" type="text" minlength="3" maxlength="16" placeholder="Например, Фельдшер03" autocomplete="nickname"><button class="btn-solid" type="submit">Войти в кабинет</button></div><small>3–16 символов: буквы, цифры, пробел, дефис, подчёркивание.</small><p class="cabinet__error" id="cabinet-login-error" hidden></p></form>
         </div>
       <?php else: ?>
-        <div class="cabinet__head"><div><p class="cabinet__eyebrow">Личный кабинет · <?= e($nick) ?></p><h2 id="cabinet-title">Подстанция игрока</h2><p>Награды начисляются только за завершённые игры. Оборудование покупается здесь, а не во время смены.</p></div><a class="cabinet__switch" href="index.php?logout=1">Сменить ник</a></div>
+        <div class="cabinet__head"><div><p class="cabinet__eyebrow">Личный кабинет · <?= e($nick) ?></p><h2 id="cabinet-title">Подстанция игрока</h2><p>Награды начисляются только за завершённые игры. Оборудование покупается здесь, а не во время смены.</p></div><div class="cabinet__head-actions"><button class="cabinet__switch encyclopedia-trigger" id="encyclopedia-open" type="button" aria-haspopup="dialog" aria-controls="encyclopedia-modal"><svg class="encyclopedia-trigger__icon" viewBox="0 0 24 24" aria-hidden="true" shape-rendering="crispEdges"><path d="M4 4h7v16H5V5zm9 0h7v16h-6V5z" fill="#7fd6b0"/><path d="M7 8h2v2H7zm0 4h2v2H7zm9-4h2v2h-2zm0 4h2v2h-2z" fill="#0b1719"/><path d="M11 4h2v17h-2z" fill="#f0a95c"/></svg>Энциклопедия <span class="encyclopedia-trigger__count">12 / 4</span></button><a class="cabinet__switch" href="index.php?logout=1">Сменить ник</a></div></div>
         <div id="cabinet-content" aria-live="polite"></div>
       <?php endif; ?>
     </section>
+
+    <?php if ($nick !== null): ?>
+    <div class="encyclopedia-modal" id="encyclopedia-modal" hidden>
+      <section class="encyclopedia-window" role="dialog" aria-modal="true" aria-labelledby="encyclopedia-title" aria-describedby="encyclopedia-description" tabindex="-1">
+        <header class="encyclopedia-window__head">
+          <div><p class="encyclopedia-kicker">Архив учебной подстанции · открыто для изучения</p><h2 id="encyclopedia-title">Медицинская энциклопедия</h2><p id="encyclopedia-description">Краткие справки по всем диагнозам и операциям тренажёра. Материалы не заменяют медицинскую помощь и клинические протоколы.</p></div>
+          <button class="encyclopedia-close" id="encyclopedia-close" type="button" aria-label="Закрыть энциклопедию">×</button>
+        </header>
+        <div class="encyclopedia-toolbar">
+          <div class="encyclopedia-tabs" role="tablist" aria-label="Разделы энциклопедии">
+            <button class="encyclopedia-tab is-active" id="encyclopedia-tab-diagnoses" type="button" role="tab" aria-selected="true" aria-controls="encyclopedia-grid" data-encyclopedia-tab="diagnoses">Диагнозы <span>12</span></button>
+            <button class="encyclopedia-tab" id="encyclopedia-tab-operations" type="button" role="tab" aria-selected="false" aria-controls="encyclopedia-grid" data-encyclopedia-tab="operations" tabindex="-1">Операции <span>4</span></button>
+          </div>
+          <label class="encyclopedia-search"><span>Поиск по справочнику</span><input id="encyclopedia-search" type="search" placeholder="Название, симптомы или тема…" autocomplete="off"></label>
+        </div>
+        <div class="encyclopedia-status"><p id="encyclopedia-results" aria-live="polite">12 статей</p><div class="encyclopedia-progress"><span id="encyclopedia-progress-label">Просмотрено: 0 из 16</span><span class="encyclopedia-progress__track"><i id="encyclopedia-progress-bar"></i></span></div><p class="encyclopedia-open-note">Все статьи доступны сразу — отметка показывает только твой прогресс чтения.</p></div>
+        <div class="encyclopedia-grid" id="encyclopedia-grid" role="tabpanel" aria-labelledby="encyclopedia-tab-diagnoses" tabindex="0"></div>
+        <p class="encyclopedia-empty" id="encyclopedia-empty" hidden>По этому запросу ничего не найдено.</p>
+        <footer class="encyclopedia-window__foot"><span>Смена 03 · справочник симулятора</span><span>При опасных симптомах обращайся за экстренной помощью</span></footer>
+      </section>
+    </div>
+    <?php endif; ?>
 
     <section class="stats" aria-label="Статистика по базе"><div class="wrap"><div class="stats__grid"><div class="stat"><span class="stat__label">Игроков</span><span class="stat__value"><?= num_ru($stats['players']) ?></span></div><div class="stat"><span class="stat__label">Смен сдано</span><span class="stat__value"><?= num_ru($stats['shifts']) ?></span></div><div class="stat"><span class="stat__label">Рекорд</span><span class="stat__value"><?= $stats['best'] > 0 ? num_ru($stats['best']) : '—' ?><small><?= $stats['best'] > 0 ? 'очк' : '' ?></small></span></div><div class="stat"><span class="stat__label">Средний счёт</span><span class="stat__value"><?= $stats['avg'] > 0 ? num_ru($stats['avg']) : '—' ?></span></div></div></div></section>
     <footer class="foot wrap"><span>Смена 03 · учебный симулятор профессии</span><span class="foot__links"><a href="rules.php">Правила</a><a href="#cabinet">Личный кабинет</a><a href="#top">Топ смен</a></span><span>Без графических сцен · только учебные сценарии</span></footer>
   </div>
 </div>
-<script>window.CABINET = <?= json_encode(['nick' => $nick, 'dashboard' => $dashboard, 'equipment' => progression_equipment(), 'hospitalLevels' => progression_hospital_levels()], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;</script>
-<script src="assets/js/cabinet.js?v=3.0"></script>
+<script>window.CABINET = <?= json_encode(['nick' => $nick, 'dashboard' => $dashboard, 'equipment' => progression_equipment(), 'hospitalLevels' => progression_hospital_levels(), 'encyclopedia' => $encyclopedia], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;</script>
+<script src="assets/js/cabinet.js?v=3.4"></script>
 </body></html>

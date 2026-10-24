@@ -32,9 +32,9 @@ $shiftMinutes = 5;
   <meta name="description" content="Одна ночь на подстанции скорой. Принимай пациентов, ставь диагнозы и держи репутацию — пока не кончится смена.">
 
   <link rel="preload" as="image" href="assets/img/fon_main.webp" type="image/webp">
-  <link rel="stylesheet" href="assets/css/main.css">
-  <link rel="stylesheet" href="assets/css/pixel-theme.css">
-  <link rel="stylesheet" href="assets/css/readability.css">
+  <link rel="stylesheet" href="assets/css/main.css?v=2.2">
+  <link rel="stylesheet" href="assets/css/pixel-theme.css?v=2.2">
+  <link rel="stylesheet" href="assets/css/readability.css?v=2.2">
 </head>
 <body class="landing" data-db="<?= $dbOk ? '1' : '0' ?>">
 
@@ -71,7 +71,7 @@ $shiftMinutes = 5;
 
       <nav class="topbar__nav" aria-label="Основная навигация">
         <a class="topbar__link" href="#top">Рекорды</a>
-        <a class="topbar__link" href="rules.php">Правила</a>
+        <a class="topbar__link" href="rules.php">Инструктаж и правила</a>
         <span class="dbpill<?= $dbOk ? '' : ' is-off' ?>" title="<?= $dbOk ? 'Данные загружаются из MySQL' : 'База недоступна: показаны заглушки' ?>">
           <span class="dbpill__dot" aria-hidden="true"></span>
           <?= $dbOk ? 'БД подключена' : 'БД offline' ?>
@@ -111,7 +111,7 @@ $shiftMinutes = 5;
               <span class="btn-play__hint">3–16 символов в нике · Enter</span>
             </span>
           </button>
-          <a class="btn-ghost" href="game.php"><svg class="ico" aria-hidden="true"><use href="#i-book"/></svg> Как играть</a>
+          <a class="btn-ghost" href="rules.php"><svg class="ico" aria-hidden="true"><use href="#i-book"/></svg> Правила и прокачка</a>
         </div>
 
         <div class="menu__meta">
@@ -139,8 +139,13 @@ $shiftMinutes = 5;
           </div>
         <?php else: ?>
           <ol class="board__list">
-            <?php foreach ($top as $row): ?>
-              <li class="rank<?= $row['rank'] === 1 ? ' rank--1' : '' ?>">
+            <?php foreach ($top as $row): 
+              $rCls = 'rank';
+              if ($row['rank'] === 1) $rCls .= ' rank--1';
+              elseif ($row['rank'] === 2) $rCls .= ' rank--2';
+              elseif ($row['rank'] === 3) $rCls .= ' rank--3';
+            ?>
+              <li class="<?= $rCls ?>">
                 <span class="rank__medal" aria-hidden="true"><?= str_pad((string) $row['rank'], 2, '0', STR_PAD_LEFT) ?></span>
                 <span class="rank__who">
                   <span class="rank__nick"><?= e($row['nickname']) ?></span>

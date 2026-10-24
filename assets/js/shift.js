@@ -119,28 +119,69 @@
 
   /* ---------------- пациент ---------------- */
 
+  function fmtAgeRu(n) {
+    var a = Math.abs(Number(n) || 0) % 100;
+    var a1 = a % 10;
+    if (a > 10 && a < 20) return n + ' лет';
+    if (a1 > 1 && a1 < 5) return n + ' года';
+    if (a1 === 1) return n + ' год';
+    return n + ' лет';
+  }
+
   function currentPatient() { return PATIENTS[S.index]; }
 
   function renderPatient() {
     var p = currentPatient();
     if (!p) return;
 
-    el.caseNo.textContent = 'Приём ' + String(S.index + 1).padStart(2, '0');
-    el.avatar.textContent = p.emoji || '🧑';
-    el.avatar.style.background = p.avatarBg || 'rgba(127,214,176,.12)';
-    el.name.textContent = p.fio;
-    el.age.textContent = p.age + ' лет';
+    if (el.caseNo) el.caseNo.textContent = 'Приём ' + String(S.index + 1).padStart(2, '0');
 
-    el.symptoms.innerHTML = (p.symptoms || []).map(function (s) {
-      return '<span class="symptom">' + esc(s) + '</span>';
-    }).join('');
+    // Пиксельный аватар персонажа вместо эмодзи
+    var portraits = window.PIXEL_PORTRAITS || {};
+    var portraitSvg = (p && (portraits[p.id] || portraits[String(p.id)] || p.svg)) || '';
+    if (el.avatar) {
+      if (portraitSvg) {
+        el.avatar.innerHTML = portraitSvg;
+      } else {
+        el.avatar.textContent = p.emoji || '🧑';
+      }
+    }
 
-    var labels = { ad: 'АД', pulse: 'Пульс', temp: 'Темп.', spo2: 'SpO₂' };
-    el.vitals.innerHTML = Object.keys(labels).map(function (k) {
-      if (!p.vitals || !p.vitals[k]) return '';
-      return '<div class="vital"><span class="vital-label">' + labels[k] +
-             '</span><span class="vital-value">' + esc(p.vitals[k]) + '</span></div>';
-    }).join('');
+    var avatarWrap = $('p-avatar-wrap');
+    if (avatarWrap) {
+      avatarWrap.style.background = p.avatarBg || 'rgba(127,214,176,.15)';
+    }
+
+    if (el.name) el.name.textContent = p.fio;
+    if (el.age) el.age.textContent = 'Возраст: ' + fmtAgeRu(p.age);
+
+    var statusEl = $('p-status');
+    if (statusEl) {
+      statusEl.textContent = S.phase === 'treat' ? 'Лечение' : 'Осмотр';
+    }
+
+    if (el.symptoms) {
+      el.symptoms.innerHTML = (p.symptoms || []).map(function (s) {
+        return '<div class="pixel-ruled-row"><span class="pixel-bullet">▪</span> <span class="pixel-symptom-text">' + esc(s) + '</span></div>';
+      }).join('');
+    }
+
+    if (el.vitals) {
+      var v = p.vitals || {};
+      el.vitals.innerHTML = 
+        '<div class="pixel-ruled-row">' +
+          '<div class="pixel-vitals-row">' +
+            '<span class="pixel-vital-cell"><span class="pixel-vital-label">АД:</span> <span class="pixel-vital-value">' + esc(v.ad || '—') + '</span></span>' +
+            '<span class="pixel-vital-cell"><span class="pixel-vital-label">Пульс:</span> <span class="pixel-vital-value">' + esc(v.pulse || '—') + '</span></span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="pixel-ruled-row">' +
+          '<div class="pixel-vitals-row">' +
+            '<span class="pixel-vital-cell"><span class="pixel-vital-label">Темп.:</span> <span class="pixel-vital-value">' + esc(v.temp ? v.temp + '°' : '—') + '</span></span>' +
+            '<span class="pixel-vital-cell"><span class="pixel-vital-label">SpO₂:</span> <span class="pixel-vital-value">' + esc(v.spo2 || '—') + '</span></span>' +
+          '</div>' +
+        '</div>';
+    }
 
     renderHud();
   }
@@ -161,9 +202,12 @@
     el.diagHint.textContent = '';
     el.diagHint.className = 'hint';
 
+    var diagIcons = window.PIXEL_DIAGNOSES || {};
+
     el.diagGrid.innerHTML = shuffle(p.options).map(function (opt) {
+      var iconHtml = diagIcons[opt.id] || ('<span style="font-size:22px">' + esc(opt.icon) + '</span>');
       return '<button class="diag-btn" type="button" data-id="' + opt.id + '">' +
-               '<span class="diag-icon">' + esc(opt.icon) + '</span>' +
+               '<span class="diag-icon diag-icon--pixel">' + iconHtml + '</span>' +
                '<span class="diag-label">' + esc(opt.label) + '</span>' +
                '<span class="diag-mark" aria-hidden="true"></span>' +
              '</button>';
@@ -187,10 +231,19 @@
         b.disabled = true;
       });
 
-      S.score += CFG.pointsCorrect || 50;
+      var bonusLamp = (window.STATION_SYSTEM && window.STATION_SYSTEM.getBonusDiagPoints) ? window.STATION_SYSTEM.getBonusDiagPoints() : 0;
+      var totalAdded = (CFG.pointsCorrect || 50) + bonusLamp;
+
+      S.score += totalAdded;
       S.diagnoses += 1;
+
+      // Награда в бюджет подстанции за верный диагноз
+      if (window.STATION_SYSTEM && window.STATION_SYSTEM.addReward) {
+        window.STATION_SYSTEM.addReward(50, 25, false);
+      }
+
       renderHud();
-      toast('Верно: ' + p.correctTitle, 'ok');
+      toast('Верно: ' + p.correctTitle + (bonusLamp ? ' (+' + bonusLamp + ' за светильник)' : '') + ' (+50 ₽ в бюджет)', 'ok');
 
       setTimeout(function () {
         S.phase = 'treat';
@@ -199,13 +252,26 @@
       }, 700);
     } else {
       btn.classList.add('is-wrong');
+
+      // Проверка бонуса дефибриллятора «Аксион» (защита от первой ошибки)
+      var hasDefib = (window.STATION_SYSTEM && window.STATION_SYSTEM.getBonusDefibrillator) ? window.STATION_SYSTEM.getBonusDefibrillator() : false;
+      var defibTriggered = false;
+
+      if (hasDefib && !S.defibUsed) {
+        S.defibUsed = true;
+        defibTriggered = true;
+        toast('Дефибриллятор «Аксион»: ошибка аннулирована без штрафа репутации!', 'ok');
+      } else {
+        S.reputation = Math.max(0, S.reputation - (CFG.penaltyDiagnosis || 10));
+      }
+
       S.score = Math.max(0, S.score - (CFG.penaltyDiagnosis || 10));
-      S.reputation = Math.max(0, S.reputation - (CFG.penaltyDiagnosis || 10));
       S.mistakes += 1;
       renderHud();
 
-      el.diagHint.textContent = 'Неверно. −' + (CFG.penaltyDiagnosis || 10) +
-        ' очков и репутации. Посмотри на показатели ещё раз.';
+      el.diagHint.textContent = defibTriggered
+        ? 'Ошибка, но дефибриллятор защитил репутацию! Попробуй снова.'
+        : 'Неверно. −' + (CFG.penaltyDiagnosis || 10) + ' очков и репутации. Посмотри на показатели ещё раз.';
       el.diagHint.className = 'hint hint--bad';
 
       setTimeout(function () { btn.classList.remove('is-wrong'); }, 900);
@@ -225,6 +291,9 @@
     el.stepTreat.classList.remove('hidden');
     el.treatHint.textContent = '';
     el.treatHint.className = 'hint';
+
+    var statusEl = $('p-status');
+    if (statusEl) statusEl.textContent = 'Лечение';
 
     S.treatSeq = [];
     paintTreatment(p);
@@ -266,10 +335,20 @@
 
       if (S.treatSeq.length === p.treatment.length) {
         S.treatBusy = true;
-        S.score += CFG.pointsTreatment || 70;
+
+        var fridgeBonus = (window.STATION_SYSTEM && window.STATION_SYSTEM.getBonusTreatMultiplier) ? window.STATION_SYSTEM.getBonusTreatMultiplier() : 1.0;
+        var earnedPoints = Math.round((CFG.pointsTreatment || 70) * fridgeBonus);
+
+        S.score += earnedPoints;
         S.saved += 1;
+
+        // Награда за успешное лечение пациента в бюджет подстанции
+        if (window.STATION_SYSTEM && window.STATION_SYSTEM.addReward) {
+          window.STATION_SYSTEM.addReward(80, 40, true);
+        }
+
         renderHud();
-        toast('Пациент в порядке: +' + (CFG.pointsTreatment || 70), 'ok');
+        toast('Пациент спасён! +' + earnedPoints + ' очков, +80 ₽ в бюджет подстанции', 'ok');
 
         setTimeout(function () {
           S.treatBusy = false;
@@ -467,10 +546,16 @@
       badge = 'Конец смены';
       title = 'Смена закончилась';
       sub = 'Время вышло. Принято пациентов: ' + S.index + ' из ' + total + '.';
+      if (window.STATION_SYSTEM && window.STATION_SYSTEM.addReward) {
+        window.STATION_SYSTEM.addReward(150, 60, false);
+      }
     } else {
       badge = 'Смена сдана';
       title = 'Все пациенты приняты';
-      sub = 'Ночь прошла без потерь. Можно сдавать отчёт.';
+      sub = 'Ночь прошла без потерь. Начислена премия за смену: +250 ₽!';
+      if (window.STATION_SYSTEM && window.STATION_SYSTEM.addReward) {
+        window.STATION_SYSTEM.addReward(250, 100, false);
+      }
     }
 
     el.finalBadge.textContent = badge;
@@ -629,14 +714,62 @@
     });
   }
 
+  function initPaletteSwitcher() {
+    var dossier = $('patient-dossier');
+    if (!dossier) return;
+
+    var buttons = document.querySelectorAll('[data-set-theme]');
+
+    function applyTheme(t) {
+      dossier.className = 'pcard pixel-dossier theme-' + t;
+      dossier.setAttribute('data-theme', t);
+      if (buttons && buttons.length) {
+        for (var i = 0; i < buttons.length; i++) {
+          var b = buttons[i];
+          b.classList.toggle('is-active', b.getAttribute('data-set-theme') === t);
+        }
+      }
+    }
+
+    var savedTheme = 'night';
+    try {
+      savedTheme = localStorage.getItem('shift_dossier_theme') || 'night';
+    } catch (e) {}
+    applyTheme(savedTheme);
+
+    if (buttons && buttons.length) {
+      for (var j = 0; j < buttons.length; j++) {
+        (function (btn) {
+          btn.addEventListener('click', function () {
+            var t = btn.getAttribute('data-set-theme');
+            applyTheme(t);
+            try {
+              localStorage.setItem('shift_dossier_theme', t);
+            } catch (e) {}
+          });
+        })(buttons[j]);
+      }
+    }
+  }
+
   function init() {
     bind();
+    initPaletteSwitcher();
 
     if (restoreFromSave()) {
       // продолжаем с сохранённого пациента
       renderPatient();
       renderDiagnoses();
     } else {
+      // Применяем бонусы оснащения подстанции при старте новой смены
+      if (window.STATION_SYSTEM) {
+        if (window.STATION_SYSTEM.getBonusTime) {
+          S.remaining += window.STATION_SYSTEM.getBonusTime();
+        }
+        if (window.STATION_SYSTEM.getBonusRep) {
+          S.reputation = Math.min(100, S.reputation + window.STATION_SYSTEM.getBonusRep());
+        }
+      }
       beginPatient();
     }
 

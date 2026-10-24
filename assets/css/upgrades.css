@@ -1,0 +1,364 @@
+/* ==========================================================================
+   upgrades.css — Стили прокачки подстанции и наложения оборудования на фон
+   ========================================================================== */
+
+/* ---------------- Оборудование на заднем плане (комната подстанции) ---------------- */
+.station-equipment-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.station-item {
+  position: absolute;
+  image-rendering: pixelated;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.7));
+}
+
+.station-item.is-locked {
+  display: none;
+}
+
+.station-item.is-installed {
+  display: block;
+  animation: itemPop 0.5s ease;
+}
+
+@keyframes itemPop {
+  0%   { opacity: 0; transform: scale(0.8) translateY(10px); }
+  60%  { opacity: 1; transform: scale(1.05) translateY(-2px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Координаты оборудования на фоне fon_main.png (не перекрываются досье) */
+.station-item--table {
+  left: clamp(16px, 2.5vw, 44px);
+  bottom: 20px;
+  width: clamp(96px, 8vw, 118px);
+}
+
+.station-item--defibrillator {
+  left: clamp(140px, 11vw, 175px);
+  bottom: 24px;
+  width: clamp(60px, 5.5vw, 76px);
+}
+
+.station-item--monitor {
+  left: clamp(225px, 17vw, 265px);
+  bottom: 24px;
+  width: clamp(74px, 6.5vw, 92px);
+}
+
+.station-item--lamp {
+  left: 50%;
+  transform: translateX(-50%);
+  top: 50px;
+  width: clamp(160px, 16vw, 210px);
+  opacity: 0.85;
+}
+
+.station-item--fridge {
+  right: clamp(16px, 2.5vw, 44px);
+  bottom: 20px;
+  width: clamp(76px, 6.5vw, 95px);
+}
+
+.station-item--radio {
+  right: clamp(125px, 11vw, 160px);
+  bottom: 24px;
+  width: clamp(76px, 6.5vw, 92px);
+}
+
+@media (max-width: 768px) {
+  .station-equipment-layer {
+    display: none;
+  }
+}
+
+/* ---------------- Кнопка в HUD ---------------- */
+.hud__btn--upgrades {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: auto !important;
+  height: 38px;
+  padding: 0 12px;
+  background: rgba(240, 169, 92, 0.12) !important;
+  border: 1px solid rgba(240, 169, 92, 0.4) !important;
+  color: var(--gp-lamp, #f0a95c) !important;
+  font-family: var(--pixel-font, "Pixellari", sans-serif);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 4px !important;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
+  transition: all 0.15s ease;
+}
+.hud__btn--upgrades:hover {
+  background: rgba(240, 169, 92, 0.22) !important;
+  border-color: #f0a95c !important;
+  transform: translate(-1px, -1px);
+}
+.hud__coin-icon {
+  width: 16px;
+  height: 16px;
+}
+.hud__coin-val {
+  color: #fff;
+}
+
+/* ---------------- Модальное окно прокачки подстанции ---------------- */
+.upgrades-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(4, 7, 10, 0.85);
+  backdrop-filter: blur(6px);
+  animation: fadeIn 0.2s ease;
+}
+.upgrades-modal[hidden] {
+  display: none !important;
+}
+
+.upgrades-card {
+  width: 100%;
+  max-width: 860px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #0d171e;
+  border: 4px solid #04070a;
+  outline: 6px solid #2f6153;
+  outline-offset: -10px;
+  box-shadow: inset 0 0 0 10px #04070a, 8px 16px 0 rgba(0, 0, 0, 0.8);
+  padding: 22px 24px;
+  position: relative;
+  font-family: var(--pixel-font, "Pixellari", sans-serif);
+  image-rendering: pixelated;
+  clip-path: polygon(
+    0 12px, 4px 12px, 4px 8px, 8px 8px, 8px 4px, 12px 4px, 12px 0,
+    calc(100% - 12px) 0, calc(100% - 12px) 4px, calc(100% - 8px) 4px, calc(100% - 8px) 8px, calc(100% - 4px) 8px, calc(100% - 4px) 12px, 100% 12px,
+    100% calc(100% - 12px), calc(100% - 4px) calc(100% - 12px), calc(100% - 4px) calc(100% - 8px), calc(100% - 8px) calc(100% - 8px), calc(100% - 8px) calc(100% - 4px), calc(100% - 12px) calc(100% - 4px), calc(100% - 12px) 100%,
+    12px 100%, 12px calc(100% - 4px), 8px calc(100% - 4px), 8px calc(100% - 8px), 4px calc(100% - 8px), 4px calc(100% - 12px), 0 calc(100% - 12px)
+  );
+}
+
+.upgrades-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 2px solid rgba(127, 214, 176, 0.2);
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+}
+.upgrades-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.upgrades-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #152928;
+  border: 2px solid #2f6556;
+  color: #7fd6b0;
+  font-size: 13px;
+  padding: 3px 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  width: fit-content;
+}
+.upgrades-title {
+  font-size: 24px;
+  font-weight: 900;
+  color: #e8f0ea;
+  margin: 4px 0 0;
+  letter-spacing: 0.02em;
+}
+.upgrades-sub {
+  font-size: 13px;
+  color: #8ea99d;
+  margin: 0;
+}
+
+.upgrades-close {
+  background: #19252c;
+  border: 2px solid #2f6153;
+  color: #8ea99d;
+  font-family: inherit;
+  font-size: 16px;
+  padding: 6px 12px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 #000;
+}
+.upgrades-close:hover {
+  color: #fff;
+  border-color: #f0a95c;
+}
+
+/* ---------------- Статистика и бюджет игрока ---------------- */
+.upgrades-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.upgrades-stat-cell {
+  background: #121e26;
+  border: 2px solid rgba(127, 214, 176, 0.25);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.5);
+}
+.upgrades-stat-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+.upgrades-stat-data {
+  display: flex;
+  flex-direction: column;
+}
+.upgrades-stat-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #8ea99d;
+}
+.upgrades-stat-val {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f0a95c;
+}
+.upgrades-stat-val--mint { color: #7fd6b0; }
+
+/* ---------------- Сетка карточек оборудования ---------------- */
+.upgrades-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.upgrade-card {
+  background: #101c24;
+  border: 3px solid #1e3b34;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.6);
+  position: relative;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.upgrade-card:hover {
+  border-color: rgba(127, 214, 176, 0.6);
+  transform: translateY(-2px);
+}
+.upgrade-card.is-installed {
+  border-color: #3b7e6b;
+  background: #12222a;
+}
+.upgrade-card.is-installed::after {
+  content: "✓ УСТАНОВЛЕНО";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  background: #1e4539;
+  color: #7fd6b0;
+  padding: 2px 6px;
+  border: 1px solid #7fd6b0;
+}
+
+.upgrade-card__preview {
+  height: 90px;
+  background: #081016;
+  border: 2px solid #04070a;
+  box-shadow: inset 2px 2px 0 #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  position: relative;
+  overflow: hidden;
+}
+.upgrade-card__preview svg {
+  max-height: 100%;
+  max-width: 100%;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.upgrade-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.upgrade-card__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #e8f0ea;
+  margin: 0;
+  line-height: 1.25;
+}
+.upgrade-card__desc {
+  font-size: 12px;
+  color: #8ea99d;
+  margin: 0;
+  line-height: 1.35;
+}
+.upgrade-card__bonus {
+  font-size: 11.5px;
+  color: #f0a95c;
+  background: rgba(240, 169, 92, 0.1);
+  border-left: 2px solid #f0a95c;
+  padding: 3px 6px;
+  margin-top: 4px;
+}
+
+.upgrade-card__action {
+  margin-top: auto;
+}
+.upgrade-btn {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid #2f6556;
+  background: #1a3a32;
+  color: #7fd6b0;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 #000;
+  transition: all 0.15s ease;
+}
+.upgrade-btn:hover:not(:disabled) {
+  background: #285b4f;
+  color: #fff;
+  border-color: #7fd6b0;
+  transform: translate(-1px, -1px);
+}
+.upgrade-btn:disabled {
+  background: #151e24;
+  border-color: #27353d;
+  color: #556973;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.upgrade-btn.is-active {
+  background: #1c3d33;
+  border-color: #7fd6b0;
+  color: #7fd6b0;
+  cursor: default;
+}

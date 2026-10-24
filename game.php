@@ -36,12 +36,17 @@ if ($nick !== null) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Смена — Смена 03</title>
-  <link rel="stylesheet" href="assets/css/base.css">
-  <link rel="stylesheet" href="assets/css/game.css">
-  <link rel="stylesheet" href="assets/css/pixel-theme.css">
-  <link rel="stylesheet" href="assets/css/readability.css">
+  <link rel="stylesheet" href="assets/css/base.css?v=2.2">
+  <link rel="stylesheet" href="assets/css/game.css?v=2.2">
+  <link rel="stylesheet" href="assets/css/pixel-theme.css?v=2.2">
+  <link rel="stylesheet" href="assets/css/pixel-window.css?v=2.2">
+  <link rel="stylesheet" href="assets/css/upgrades.css?v=2.2">
+  <link rel="stylesheet" href="assets/css/readability.css?v=2.2">
 </head>
 <body class="game-body">
+
+<!-- Слой отображения прокачки оборудования на фоне помещения подстанции -->
+<div class="station-equipment-layer" id="station-equipment-layer" aria-hidden="true"></div>
 
 <svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
   <symbol id="i-pause" viewBox="0 0 24 24"><rect x="7" y="5" width="3.6" height="14" rx="1" fill="currentColor"/><rect x="13.4" y="5" width="3.6" height="14" rx="1" fill="currentColor"/></symbol>
@@ -80,6 +85,10 @@ if ($nick !== null) {
   </div>
 
   <div class="hud__right">
+    <button class="hud__btn hud__btn--upgrades" id="btn-upgrades-hud" type="button" title="Оснащение и прокачка подстанции">
+      <span class="hud__coin-icon">🛠️</span>
+      <span class="hud__coin-val">200 ₽</span>
+    </button>
     <button class="hud__btn" id="btn-pause" type="button" title="Пауза (P)">
       <svg class="ico" aria-hidden="true"><use href="#i-pause"/></svg>
     </button>
@@ -91,24 +100,62 @@ if ($nick !== null) {
   <!-- ===================== ЭКРАН ПАЦИЕНТА ===================== -->
   <section class="screen" id="screen-patient" aria-live="polite">
 
-    <aside class="pcard">
-      <div class="pcard__top">
-        <div class="pcard__avatar" id="p-avatar">🧑</div>
-        <div class="pcard__id">
-          <span class="pcard__case" id="p-case">Приём 01</span>
-          <h2 class="pcard__name" id="p-name">—</h2>
-          <p class="pcard__age" id="p-age">—</p>
+    <aside class="pcard pixel-dossier theme-night" id="patient-dossier" data-theme="night">
+      <div class="pixel-dossier__toolbar">
+        <span class="pixel-dossier__case-tag" id="p-case">Приём 01</span>
+        <div class="pixel-dossier__palette-switch" role="group" aria-label="Палитра окна">
+          <button type="button" class="pixel-palette-btn is-active" data-set-theme="night" title="Ночная смена (под фон сайта)">🚑 Ночь</button>
+          <button type="button" class="pixel-palette-btn" data-set-theme="classic" title="Классика (из референса)">📋 Макет</button>
+          <button type="button" class="pixel-palette-btn" data-set-theme="paper" title="Медицинский бланк">🩺 Бланк</button>
         </div>
       </div>
 
-      <div class="pcard__block">
-        <h3 class="pcard__h">Жалобы</h3>
-        <div class="symptoms" id="p-symptoms"></div>
-      </div>
+      <div class="pixel-dossier__shell">
+        <div class="pixel-dossier__grid">
 
-      <div class="pcard__block">
-        <h3 class="pcard__h">Показатели</h3>
-        <div class="vitals" id="p-vitals"></div>
+          <!-- ЛЕВАЯ КОЛОНКА: ЗАКЛЮЧЕНИЕ + ЛИНИИ -->
+          <div class="pixel-dossier__left">
+            <div class="pixel-badge">«Заключение»</div>
+
+            <div class="pixel-ruled-sheet">
+              <div class="pixel-ruled-row pixel-ruled-row--title">Жалобы:</div>
+              <div id="p-symptoms" class="pixel-symptoms-container"></div>
+
+              <div class="pixel-ruled-row pixel-ruled-row--title">Показатели:</div>
+              <div id="p-vitals" class="pixel-vitals-container"></div>
+
+              <div class="pixel-ruled-row pixel-ruled-row--empty"></div>
+              <div class="pixel-ruled-row pixel-ruled-row--empty"></div>
+            </div>
+          </div>
+
+          <!-- ЦЕНТРАЛЬНЫЙ РАЗДЕЛИТЕЛЬ -->
+          <div class="pixel-divider-bar" aria-hidden="true"></div>
+
+          <!-- ПРАВАЯ КОЛОНКА: ФОТО + ФИО -->
+          <div class="pixel-dossier__right">
+            <div class="pixel-photo-frame">
+              <div class="pixel-photo-frame__avatar-wrap" id="p-avatar-wrap">
+                <span class="pixel-photo-frame__avatar" id="p-avatar">🧑</span>
+              </div>
+              <div class="pixel-photo-frame__pulse">
+                <span class="pixel-pulse-dot" aria-hidden="true"></span>
+                <span id="p-status">Осмотр</span>
+              </div>
+            </div>
+
+            <div class="pixel-fio-section">
+              <div class="pixel-fio-row">
+                <span class="pixel-fio-label">Ф.И.О.</span>
+                <div class="pixel-fio-underline">
+                  <span class="pixel-fio-value" id="p-name">—</span>
+                </div>
+              </div>
+              <div class="pixel-age-line" id="p-age">—</div>
+            </div>
+          </div>
+
+        </div>
       </div>
     </aside>
 
@@ -194,6 +241,55 @@ if ($nick !== null) {
     </div>
   </div>
 
+  <!-- ===================== МОДАЛЬНОЕ ОКНО ПРОКАЧКИ ПОДСТАНЦИИ ===================== -->
+  <div class="upgrades-modal" id="modal-upgrades" hidden>
+    <div class="upgrades-card">
+      <div class="upgrades-header">
+        <div class="upgrades-title-wrap">
+          <div class="upgrades-badge">🛠️ Склад медтехники · Подстанция 03</div>
+          <h2 class="upgrades-title">Оснащение и модернизация</h2>
+          <p class="upgrades-sub">Закупка оборудования за счёт спасённых пациентов и бюджета ночных дежурств</p>
+        </div>
+        <button class="upgrades-close" id="btn-close-upgrades" type="button" aria-label="Закрыть">✕ Закрыть</button>
+      </div>
+
+      <div class="upgrades-stats">
+        <div class="upgrades-stat-cell">
+          <span class="upgrades-stat-icon">💰</span>
+          <div class="upgrades-stat-data">
+            <span class="upgrades-stat-label">Бюджет подстанции</span>
+            <span class="upgrades-stat-val" id="upgrades-budget-val">200 ₽</span>
+          </div>
+        </div>
+        <div class="upgrades-stat-cell">
+          <span class="upgrades-stat-icon">⭐</span>
+          <div class="upgrades-stat-data">
+            <span class="upgrades-stat-label">Опыт дежурств</span>
+            <span class="upgrades-stat-val upgrades-stat-val--mint" id="upgrades-xp-val">50 XP</span>
+          </div>
+        </div>
+        <div class="upgrades-stat-cell">
+          <span class="upgrades-stat-icon">❤️</span>
+          <div class="upgrades-stat-data">
+            <span class="upgrades-stat-label">Спасённых жизней</span>
+            <span class="upgrades-stat-val upgrades-stat-val--mint" id="upgrades-saved-val">0</span>
+          </div>
+        </div>
+        <div class="upgrades-stat-cell">
+          <span class="upgrades-stat-icon">🏥</span>
+          <div class="upgrades-stat-data">
+            <span class="upgrades-stat-label">Статус оснащения</span>
+            <span class="upgrades-stat-val" id="upgrades-level-val">1 / 6</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="upgrades-grid" id="upgrades-grid">
+        <!-- Карточки оборудования загружаются из upgrades.js -->
+      </div>
+    </div>
+  </div>
+
 </main>
 
 <script>
@@ -210,6 +306,8 @@ window.SHIFT = <?= json_encode([
     ],
 ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 </script>
-<script src="assets/js/shift.js"></script>
+<script src="assets/js/pixel-art.js?v=2.2"></script>
+<script src="assets/js/upgrades.js?v=2.2"></script>
+<script src="assets/js/shift.js?v=2.2"></script>
 </body>
 </html>

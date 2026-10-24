@@ -277,7 +277,12 @@
       var rank = String(p.rank);
       var pad = rank.length < 2 ? '0' + rank : rank;
       var date = (p.finished_at || '').slice(0, 16).replace(/-/g, '.').replace(' ', ' · ');
-      return '<li class="rank' + (Number(p.rank) === 1 ? ' rank--1' : '') + '">' +
+      var rankCls = 'rank';
+      if (Number(p.rank) === 1) rankCls += ' rank--1';
+      else if (Number(p.rank) === 2) rankCls += ' rank--2';
+      else if (Number(p.rank) === 3) rankCls += ' rank--3';
+
+      return '<li class="' + rankCls + '">' +
         '<span class="rank__medal" aria-hidden="true">' + pad + '</span>' +
         '<span class="rank__who">' +
           '<span class="rank__nick">' + esc(p.nickname) + '</span>' +

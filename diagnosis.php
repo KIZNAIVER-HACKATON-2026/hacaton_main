@@ -12,10 +12,10 @@ $diagnoses = $patient['diagnoses'] ?? [];
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Диагноз — Смена 03</title>
-  <link rel="stylesheet" href="assets/css/base.css">
-  <link rel="stylesheet" href="assets/css/style.css">
-  <link rel="stylesheet" href="assets/css/pixel-theme.css">
-  <link rel="stylesheet" href="assets/css/readability.css">
+  <link rel="stylesheet" href="assets/css/base.css?v=2.2">
+  <link rel="stylesheet" href="assets/css/style.css?v=2.2">
+  <link rel="stylesheet" href="assets/css/pixel-theme.css?v=2.2">
+  <link rel="stylesheet" href="assets/css/readability.css?v=2.2">
 </head>
 <body>
 
@@ -36,7 +36,7 @@ $diagnoses = $patient['diagnoses'] ?? [];
     <div class="diag-grid" id="diag-grid">
       <?php foreach ($diagnoses as $d): ?>
         <button class="diag-btn" data-correct="<?= !empty($d['correct']) ? '1' : '0' ?>">
-          <span class="diag-icon"><?= htmlspecialchars($d['icon'] ?? '❓') ?></span>
+          <span class="diag-icon"><?= !empty($d['svg']) ? $d['svg'] : htmlspecialchars($d['icon'] ?? '❓') ?></span>
           <span class="diag-label"><?= htmlspecialchars($d['label'] ?? '—') ?></span>
         </button>
       <?php endforeach; ?>

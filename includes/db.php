@@ -50,6 +50,18 @@ function db_or_null(): ?PDO
     try {
         return db();
     } catch (Throwable $e) {
+        $sqliteFile = dirname(__DIR__) . '/database/shift03.sqlite';
+        if (is_file($sqliteFile)) {
+            try {
+                $sqlite = new PDO('sqlite:' . $sqliteFile, null, null, [
+                    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                ]);
+                return $sqlite;
+            } catch (Throwable $se) {
+                // Ignore sqlite fallback error
+            }
+        }
         error_log('[shift03] DB error: ' . $e->getMessage());
         return null;
     }

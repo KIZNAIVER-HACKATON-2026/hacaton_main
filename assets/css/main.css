@@ -492,24 +492,39 @@ body.landing {
    Табло рекордов
    ========================================================================== */
 
+/* ==========================================================================
+   Табло рекордов (Ретро-пиксельный стиль мед-терминала)
+   ========================================================================== */
+
 .board {
   position: relative;
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
-  background:
-    linear-gradient(180deg, rgba(18, 26, 34, .86), rgba(9, 14, 19, .9));
-  box-shadow: var(--shadow), inset 0 1px 0 rgba(190, 235, 220, .07);
-  backdrop-filter: blur(14px) saturate(1.1);
+  border-radius: 0 !important;
+  background: rgba(10, 18, 22, 0.94) !important;
+  background-image: repeating-linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0) 0,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0.22) 2px,
+    rgba(0, 0, 0, 0.22) 4px
+  ) !important;
+  border: 4px solid #050b0d !important;
+  outline: 3px solid #234d42 !important;
+  outline-offset: -7px !important;
+  box-shadow: 
+    inset 0 0 0 7px #050b0d,
+    6px 6px 0 rgba(0, 0, 0, 0.75) !important;
   overflow: hidden;
+  clip-path: polygon(
+    0 10px, 3px 10px, 3px 6px, 6px 6px, 6px 3px, 10px 3px, 10px 0,
+    calc(100% - 10px) 0, calc(100% - 10px) 3px, calc(100% - 6px) 3px, calc(100% - 6px) 6px, calc(100% - 3px) 6px, calc(100% - 3px) 10px, 100% 10px,
+    100% calc(100% - 10px), calc(100% - 3px) calc(100% - 10px), calc(100% - 3px) calc(100% - 6px), calc(100% - 6px) calc(100% - 6px), calc(100% - 6px) calc(100% - 3px), calc(100% - 10px) calc(100% - 3px), calc(100% - 10px) 100%,
+    10px 100%, 10px calc(100% - 3px), 6px calc(100% - 3px), 6px calc(100% - 6px), 3px calc(100% - 6px), 3px calc(100% - 10px), 0 calc(100% - 10px)
+  );
+  image-rendering: pixelated;
+  backdrop-filter: blur(8px);
 }
 .board::before {
-  /* верхняя акцентная полоса */
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--mint) 22%, var(--lamp) 78%, transparent);
-  opacity: .55;
+  display: none !important;
 }
 
 .board__head {
@@ -517,182 +532,293 @@ body.landing {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 20px 20px 14px;
+  padding: 14px 16px 12px;
+  background: #0e2021;
+  border-bottom: 3px solid #050b0d;
+  box-shadow: inset 0 -2px 0 #285448;
 }
 .board__title {
   margin: 0;
-  font-size: 12.5px;
+  font-family: var(--pixel-font, "Pixellari", sans-serif);
+  font-size: 14px;
   font-weight: 800;
-  letter-spacing: .2em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--text-dim);
+  color: #f0a95c;
+  text-shadow: 2px 2px 0 #000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.board__title::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #f0a95c;
+  box-shadow: 1px 1px 0 #000;
 }
 .board__live {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-family: var(--mono);
-  font-size: 9.5px;
-  letter-spacing: .12em;
+  padding: 3px 8px;
+  border-radius: 0 !important;
+  background: #081415;
+  border: 2px solid #23473f;
+  color: #7fd6b0;
+  font-family: var(--pixel-font, "Pixellari", sans-serif);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--faint);
+  box-shadow: 2px 2px 0 #000;
 }
 .board__live i {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--mint);
-  animation: pulse 2.6s ease-in-out infinite;
+  width: 6px;
+  height: 6px;
+  border-radius: 0 !important;
+  background: #7fd6b0;
+  box-shadow: 0 0 6px #7fd6b0;
+  animation: pulse 1.6s steps(2, start) infinite;
 }
 
 .board__list {
   margin: 0;
-  padding: 4px 10px 10px;
+  padding: 10px 12px;
   list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .rank {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) auto;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
-  padding: 11px 10px;
-  border-radius: 11px;
-  border: 1px solid transparent;
-  transition: background .18s, border-color .18s, transform .18s;
+  padding: 8px 10px;
+  border-radius: 0 !important;
+  border: 2px solid #142a2b;
+  background: rgba(8, 16, 20, 0.75);
+  box-shadow: 2px 2px 0 #000;
+  transition: none !important;
 }
-.rank + .rank { margin-top: 2px; }
+.rank + .rank { margin-top: 0; }
 .rank:hover {
-  background: rgba(127, 214, 176, .06);
-  border-color: rgba(127, 214, 176, .16);
-  transform: translateX(2px);
+  background: rgba(18, 38, 40, 0.95);
+  border-color: #3b7468;
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 #000;
 }
 
 .rank__medal {
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  border: 1px solid rgba(190, 235, 220, .16);
-  background: rgba(255, 255, 255, .035);
-  font-family: var(--mono);
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--muted);
+  width: 32px;
+  height: 32px;
+  border-radius: 0 !important;
+  border: 2px solid #23473f;
+  background: #0c181a;
+  box-shadow: 1px 1px 0 #000;
+  font-family: var(--pixel-font, "Pixellari", sans-serif);
+  font-size: 13px;
+  font-weight: 800;
+  color: #8faaa0;
+}
+
+.rank:nth-child(2), .rank--2 {
+  border-color: #274844;
+}
+.rank:nth-child(2) .rank__medal, .rank--2 .rank__medal {
+  border-color: #8ab8b0;
+  background: #1b3536;
+  color: #e4f4f0;
+}
+.rank:nth-child(2) .rank__score, .rank--2 .rank__score {
+  color: #7fd6b0;
+}
+
+.rank:nth-child(3), .rank--3 {
+  border-color: #3b2c1f;
+}
+.rank:nth-child(3) .rank__medal, .rank--3 .rank__medal {
+  border-color: #b87c47;
+  background: #261c14;
+  color: #f2cfaf;
+}
+.rank:nth-child(3) .rank__score, .rank--3 .rank__score {
+  color: #f0a95c;
 }
 
 .rank__who { min-width: 0; }
 .rank__nick {
   display: block;
-  font-size: 14.5px;
+  font-family: var(--pixel-font, "Pixellari", sans-serif);
+  font-size: 15.5px;
   font-weight: 700;
-  letter-spacing: .01em;
-  color: var(--text);
+  letter-spacing: 0.02em;
+  color: #e8f0ea;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-shadow: 1px 1px 0 #000;
 }
 .rank__when {
   display: block;
   margin-top: 2px;
-  font-family: var(--mono);
-  font-size: 10.5px;
-  letter-spacing: .04em;
-  color: var(--faint);
+  font-family: var(--pixel-font, "Pixellari", sans-serif);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: #8faaa0;
 }
 .rank__score {
-  font-family: var(--mono);
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--lamp);
+  font-family: var(--pixel-font, "Pixellari", sans-serif);
+  font-size: 16px;
+  font-weight: 800;
+  color: #f0a95c;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  text-shadow: 1px 1px 0 #000;
 }
 .rank__score small {
-  font-size: 9.5px;
-  font-weight: 500;
-  letter-spacing: .1em;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--faint);
+  color: #8faaa0;
   margin-left: 4px;
 }
 
-/* первое место */
+/* Первое место — Золотой чемпионский пиксельный стиль */
 .rank--1 {
-  border-color: rgba(243, 200, 96, .28);
-  background:
-    linear-gradient(90deg, rgba(243, 200, 96, .10), rgba(243, 200, 96, .02) 60%, transparent);
+  border: 2px solid #f3c860 !important;
+  background: rgba(243, 200, 96, 0.12) !important;
+  box-shadow: 3px 3px 0 #000, inset 0 0 0 1px rgba(243, 200, 96, 0.25) !important;
 }
 .rank--1 .rank__medal {
-  border-color: rgba(243, 200, 96, .45);
-  background: rgba(243, 200, 96, .14);
-  color: var(--gold);
-  box-shadow: 0 0 20px -6px rgba(243, 200, 96, .55);
+  border: 2px solid #ffe894 !important;
+  background: #f3c860 !important;
+  color: #0b1414 !important;
+  font-size: 14px;
+  font-weight: 900;
+  box-shadow: 2px 2px 0 #000 !important;
+  border-radius: 0 !important;
 }
-.rank--1 .rank__score { color: var(--gold); }
+.rank--1 .rank__nick {
+  color: #ffffff !important;
+  font-weight: 800;
+}
+.rank--1 .rank__when {
+  color: #dfbf75 !important;
+}
+.rank--1 .rank__score {
+  color: #f3c860 !important;
+  font-size: 17px;
+}
+.rank--1 .rank__score small {
+  color: #d8b668 !important;
+}
 
 .board__empty {
-  padding: 26px 20px 30px;
+  padding: 24px 18px 28px;
   text-align: center;
-  color: var(--muted);
-  font-size: 13px;
+  color: #8faaa0;
+  font-family: var(--pixel-font, "Pixellari", sans-serif);
+  font-size: 13.5px;
   line-height: 1.6;
+  background: #081215;
+  border: 2px dashed #234d42;
+  margin: 10px 12px;
+  box-shadow: 2px 2px 0 #000;
 }
 .board__empty b {
   display: block;
   margin-bottom: 4px;
-  font-size: 22px;
-  color: var(--text-dim);
+  font-size: 18px;
+  color: #e8f0ea;
 }
 .board__empty-ico {
   display: block;
   width: 34px;
   height: 34px;
   margin: 0 auto 10px;
-  color: var(--gold);
-  opacity: .55;
+  color: #f3c860;
+  opacity: 0.85;
+  filter: drop-shadow(2px 2px 0 #000);
 }
 
-/* последние смены */
+/* Блок последних смен */
 .board__foot {
-  border-top: 1px solid var(--line-soft);
-  padding: 13px 18px 15px;
-  background: rgba(6, 10, 14, .35);
+  border-top: 3px solid #050b0d;
+  box-shadow: inset 0 2px 0 #285448;
+  padding: 12px 14px 14px;
+  background: #0a1618;
 }
 .board__foot-title {
-  margin: 0 0 9px;
-  font-family: var(--mono);
-  font-size: 9.5px;
-  letter-spacing: .14em;
+  margin: 0 0 8px;
+  font-family: var(--pixel-font, "Pixellari", sans-serif);
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--faint);
+  color: #f0a95c;
+  text-shadow: 1px 1px 0 #000;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
-.recent { display: flex; flex-direction: column; gap: 7px; }
+.board__foot-title::before {
+  content: "■";
+  color: #7fd6b0;
+  font-size: 8px;
+}
+.recent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
 .recent__row {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
-  color: var(--muted);
+  font-size: 12.5px;
+  color: #8faaa0;
+  padding: 5px 8px;
+  background: rgba(5, 10, 14, 0.6);
+  border: 1px solid #162f2b;
+  box-shadow: 1px 1px 0 #000;
+  border-radius: 0 !important;
+  font-family: var(--pixel-font, "Pixellari", sans-serif);
+}
+.recent__row:hover {
+  background: rgba(127, 214, 176, 0.08);
+  border-color: #2b5c50;
 }
 .recent__nick {
-  color: var(--text-dim);
-  font-weight: 600;
+  color: #7fd6b0;
+  font-weight: 700;
   max-width: 45%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.recent__dot { color: var(--faint); }
+.recent__dot {
+  color: #3b6559;
+  font-weight: 900;
+}
+.recent__when {
+  font-size: 11px;
+  color: #8faaa0;
+}
 .recent__score {
   margin-left: auto;
-  font-family: var(--mono);
-  font-size: 11.5px;
-  color: var(--lamp);
+  font-size: 13px;
+  font-weight: 800;
+  color: #f0a95c;
   font-variant-numeric: tabular-nums;
+  text-shadow: 1px 1px 0 #000;
 }
-.recent__when { font-family: var(--mono); font-size: 10.5px; color: var(--faint); }
 
 /* ==========================================================================
    Нижняя полоса статистики

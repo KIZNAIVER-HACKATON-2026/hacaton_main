@@ -174,10 +174,16 @@ body.game-body {
 
 .screen {
   display: grid;
-  grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
+  grid-template-columns: minmax(460px, 580px) minmax(0, 1fr);
   gap: clamp(16px, 2.4vw, 26px);
   align-items: start;
   animation: fadeUp .3s ease;
+}
+
+@media (max-width: 1040px) {
+  .screen {
+    grid-template-columns: 1fr;
+  }
 }
 
 @keyframes fadeUp {

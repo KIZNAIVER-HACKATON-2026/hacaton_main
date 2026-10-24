@@ -12,17 +12,18 @@
  */
 
 require_once __DIR__ . '/includes/data.php';
+@include_once __DIR__ . '/includes/pixel_art.php';
 
 /** Резервные названия: используются, если базы нет или записи не хватает. */
 const DIAGNOSIS_FALLBACK = [
-    1 => ['title' => 'ОРВИ', 'icon' => '🤧'],
-    2 => ['title' => 'Грипп', 'icon' => '🤒'],
-    3 => ['title' => 'Пищевое отравление', 'icon' => '🤢'],
-    4 => ['title' => 'Острый отит', 'icon' => '👂'],
-    5 => ['title' => 'Растяжение голеностопа', 'icon' => '🦶'],
-    6 => ['title' => 'Аллергическая реакция', 'icon' => '🌾'],
+    1 => ['title' => 'ОРВИ', 'icon' => '🌡️'],
+    2 => ['title' => 'Грипп', 'icon' => '🛡️'],
+    3 => ['title' => 'Пищевое отравление', 'icon' => '🧪'],
+    4 => ['title' => 'Острый отит', 'icon' => '🎧'],
+    5 => ['title' => 'Растяжение голеностопа', 'icon' => '🩹'],
+    6 => ['title' => 'Аллергическая реакция', 'icon' => '💉'],
     7 => ['title' => 'Инфаркт', 'icon' => '❤️‍🩹'],
-    8 => ['title' => 'Аппендицит', 'icon' => '🏥'],
+    8 => ['title' => 'Аппендицит', 'icon' => '🔬'],
 ];
 
 /** Настройки смены: одна точка правды для баланса. */
@@ -71,12 +72,43 @@ function diagnosis_index(): array
  *   treatment         — действия в правильном порядке
  *   note              — короткое объяснение после верного диагноза
  */
+function get_pixel_portraits(): array {
+    static $portraits = null;
+    if ($portraits === null) {
+        $file = __DIR__ . '/includes/pixel_art.php';
+        if (file_exists($file)) {
+            require $file;
+            $portraits = isset($PIXEL_PORTRAITS) ? $PIXEL_PORTRAITS : [];
+        } else {
+            $portraits = [];
+        }
+    }
+    return $portraits;
+}
+
+function get_pixel_diagnoses(): array {
+    static $diagnoses = null;
+    if ($diagnoses === null) {
+        $file = __DIR__ . '/includes/pixel_art.php';
+        if (file_exists($file)) {
+            require $file;
+            $diagnoses = isset($PIXEL_DIAGNOSES) ? $PIXEL_DIAGNOSES : [];
+        } else {
+            $diagnoses = [];
+        }
+    }
+    return $diagnoses;
+}
+
 function shift_patients(): array
 {
+    $portraits = get_pixel_portraits();
+
     return [
         [
             'id' => 1, 'fio' => 'Иванов Пётр Сергеевич', 'short' => 'Пётр, 54',
-            'age' => 54, 'emoji' => '🧔', 'avatarBg' => '#DBEAFE',
+            'age' => 54, 'emoji' => '🧔', 'avatarBg' => 'rgba(29, 72, 140, 0.25)',
+            'svg' => $portraits[1] ?? '',
             'symptoms' => ['Давящая боль в груди', 'Отдаёт в левую руку', 'Холодный пот', 'Одышка'],
             'vitals' => ['ad' => '150/95', 'pulse' => '102', 'temp' => '36.7', 'spo2' => '94%'],
             'options' => [7, 1, 5],
@@ -86,7 +118,8 @@ function shift_patients(): array
         ],
         [
             'id' => 2, 'fio' => 'Сидорова Анна Викторовна', 'short' => 'Анна, 28',
-            'age' => 28, 'emoji' => '👩', 'avatarBg' => '#FCE7F3',
+            'age' => 28, 'emoji' => '👩', 'avatarBg' => 'rgba(217, 83, 79, 0.25)',
+            'svg' => $portraits[2] ?? '',
             'symptoms' => ['Температура 39.2', 'Резкое начало за вечер', 'Ломота в теле', 'Сухой кашель'],
             'vitals' => ['ad' => '110/70', 'pulse' => '98', 'temp' => '39.2', 'spo2' => '96%'],
             'options' => [2, 1, 3],
@@ -96,7 +129,8 @@ function shift_patients(): array
         ],
         [
             'id' => 3, 'fio' => 'Козлов Игорь Анатольевич', 'short' => 'Игорь, 41',
-            'age' => 41, 'emoji' => '👨', 'avatarBg' => '#FEF3C7',
+            'age' => 41, 'emoji' => '👨', 'avatarBg' => 'rgba(40, 117, 108, 0.25)',
+            'svg' => $portraits[3] ?? '',
             'symptoms' => ['Резкая боль в правом боку', 'Тошнота', 'Усиливается при ходьбе', 'Температура 37.8'],
             'vitals' => ['ad' => '130/80', 'pulse' => '92', 'temp' => '37.8', 'spo2' => '98%'],
             'options' => [8, 3, 5],
@@ -106,7 +140,8 @@ function shift_patients(): array
         ],
         [
             'id' => 4, 'fio' => 'Морозова Ольга, 6 лет', 'short' => 'Оля, 6',
-            'age' => 6, 'emoji' => '👧', 'avatarBg' => '#FDE68A',
+            'age' => 6, 'emoji' => '👧', 'avatarBg' => 'rgba(250, 213, 97, 0.22)',
+            'svg' => $portraits[4] ?? '',
             'symptoms' => ['Боль в правом ухе', 'Плачет, тянет рукой за ухо', 'Температура 37.9', 'После купания'],
             'vitals' => ['ad' => '100/60', 'pulse' => '110', 'temp' => '37.9', 'spo2' => '97%'],
             'options' => [4, 1, 6],
@@ -116,7 +151,8 @@ function shift_patients(): array
         ],
         [
             'id' => 5, 'fio' => 'Соколов Дмитрий, 23', 'short' => 'Дмитрий, 23',
-            'age' => 23, 'emoji' => '🧑', 'avatarBg' => '#D1FAE5',
+            'age' => 23, 'emoji' => '🧑', 'avatarBg' => 'rgba(29, 72, 140, 0.25)',
+            'svg' => $portraits[5] ?? '',
             'symptoms' => ['Подвернул стопу на тренировке', 'Отёк голеностопа', 'Ходить больно', 'Синяка нет'],
             'vitals' => ['ad' => '120/75', 'pulse' => '84', 'temp' => '36.6', 'spo2' => '99%'],
             'options' => [5, 8, 4],
@@ -126,8 +162,9 @@ function shift_patients(): array
         ],
         [
             'id' => 6, 'fio' => 'Никитина Мария, 31', 'short' => 'Мария, 31',
-            'age' => 31, 'emoji' => '👩‍🦰', 'avatarBg' => '#FBCFE8',
-            'symptoms' => ['Сыпь и зуд по телу', 'Отекли губы', 'Дыхание с присвистом', 'После укуса насекомого'],
+            'age' => 31, 'emoji' => '👩', 'avatarBg' => 'rgba(217, 125, 149, 0.25)',
+            'svg' => $portraits[6] ?? '',
+            'symptoms' => ['Сыпь и зуд по телу', 'Отекли губы', 'Дыхание с присвистом', 'После укуса осы'],
             'vitals' => ['ad' => '105/65', 'pulse' => '108', 'temp' => '36.9', 'spo2' => '95%'],
             'options' => [6, 4, 2],
             'correct' => 6,
@@ -136,23 +173,25 @@ function shift_patients(): array
         ],
         [
             'id' => 7, 'fio' => 'Волков Сергей, 46', 'short' => 'Сергей, 46',
-            'age' => 46, 'emoji' => '🧑‍🦱', 'avatarBg' => '#E0E7FF',
-            'symptoms' => ['Насморк', 'Боль в горле', 'Температура 37.4', 'Болеет третий день'],
+            'age' => 46, 'emoji' => '👨', 'avatarBg' => 'rgba(47, 111, 101, 0.25)',
+            'svg' => $portraits[7] ?? '',
+            'symptoms' => ['Заложенность носа', 'Першение в горле', 'Температура 37.4', 'Болеет второй день'],
             'vitals' => ['ad' => '125/80', 'pulse' => '88', 'temp' => '37.4', 'spo2' => '98%'],
             'options' => [1, 2, 7],
             'correct' => 1,
             'treatment' => ['Обильное питьё', 'Полоскание горла', 'Жаропонижающее при t° > 38.5'],
-            'note' => 'Постепенное начало, насморк и невысокая температура — ОРВИ. Антибиотики здесь не нужны.',
+            'note' => 'Постепенное начало, насморк и невысокая температура — ОРВИ. Антибиотики не показаны.',
         ],
         [
             'id' => 8, 'fio' => 'Зайцева Елена, 35', 'short' => 'Елена, 35',
-            'age' => 35, 'emoji' => '👩‍🦱', 'avatarBg' => '#FEE2E2',
-            'symptoms' => ['Тошнота и рвота', 'Диарея', 'Болит живот', 'После салата в кафе'],
+            'age' => 35, 'emoji' => '👩', 'avatarBg' => 'rgba(44, 88, 96, 0.25)',
+            'svg' => $portraits[8] ?? '',
+            'symptoms' => ['Тошнота и рвота', 'Слабость', 'Тянущая боль в животе', 'После салата в кафе'],
             'vitals' => ['ad' => '100/65', 'pulse' => '96', 'temp' => '37.2', 'spo2' => '97%'],
             'options' => [3, 8, 1],
             'correct' => 3,
             'treatment' => ['Промывание желудка по показаниям', 'Сорбент', 'Регидратация', 'Наблюдение'],
-            'note' => 'Симптомы после еды и в один вечер с другими гостями — пищевое отравление. Главное — не дать обезвоживанию.',
+            'note' => 'Симптомы после еды в кафе — пищевое отравление. Главное — дать сорбент и не допустить обезвоживания.',
         ],
     ];
 }
@@ -223,6 +262,7 @@ function game_patients(): array
                 'id'    => $id,
                 'label' => $index[$id]['title'] ?? ('Диагноз #' . $id),
                 'icon'  => $index[$id]['icon'] ?? '❓',
+                'svg'   => get_pixel_diagnoses()[$id] ?? '',
             ];
         }
 
@@ -232,6 +272,7 @@ function game_patients(): array
             'short'      => $p['short'],
             'age'        => $p['age'],
             'emoji'      => $p['emoji'],
+            'svg'        => $p['svg'] ?? '',
             'avatarBg'   => $p['avatarBg'],
             'symptoms'   => $p['symptoms'],
             'vitals'     => $p['vitals'],
@@ -252,6 +293,7 @@ function game_patients(): array
 
 function getAllPatients(): array
 {
+    global $PIXEL_DIAGNOSES;
     $index = diagnosis_index();
     $legacy = [];
 
@@ -259,8 +301,10 @@ function getAllPatients(): array
         $diagnoses = [];
         foreach ($p['options'] as $id) {
             $diagnoses[] = [
+                'id'      => $id,
                 'label'   => $index[$id]['title'] ?? ('Диагноз #' . $id),
                 'icon'    => $index[$id]['icon'] ?? '❓',
+                'svg'     => $PIXEL_DIAGNOSES[$id] ?? '',
                 'correct' => $id === $p['correct'],
             ];
         }
@@ -271,6 +315,7 @@ function getAllPatients(): array
             'age'       => $p['age'],
             'emoji'     => $p['emoji'],
             'avatarBg'  => $p['avatarBg'],
+            'svg'       => $p['svg'] ?? '',
             'symptoms'  => $p['symptoms'],
             'vitals'    => $p['vitals'],
             'diagnoses' => $diagnoses,

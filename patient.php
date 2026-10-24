@@ -25,58 +25,7 @@ if ($saved && isset($saved['state']['patientIndex'])) {
     $resumeId = (int) $saved['state']['patientIndex'] + 1;
 }
 
-function getAllPatients(): array {
-    return [
-        1 => [
-            'id' => 1,
-            'fio' => 'Иванов Пётр Сергеевич',
-            'age' => 54,
-            'emoji' => '🧔',
-            'avatarBg' => '#DBEAFE',
-            'symptoms' => ['Давящая боль в груди', 'Одышка', 'Холодный пот', 'Боль отдаёт в левую руку'],
-            'vitals' => ['ad' => '150/95', 'pulse' => '102', 'temp' => '36.7', 'spo2' => '94%'],
-            'diagnoses' => [
-                ['label' => 'Инфаркт', 'icon' => '❤️‍🩹', 'correct' => true],
-                ['label' => 'Гастрит', 'icon' => '🫃', 'correct' => false],
-                ['label' => 'Остеохондроз', 'icon' => '🦴', 'correct' => false],
-            ],
-        ],
-        2 => [
-            'id' => 2,
-            'fio' => 'Сидорова Анна Викторовна',
-            'age' => 28,
-            'emoji' => '👩',
-            'avatarBg' => '#FCE7F3',
-            'symptoms' => ['Температура 39.2', 'Сухой кашель', 'Головная боль', 'Слабость'],
-            'vitals' => ['ad' => '110/70', 'pulse' => '98', 'temp' => '39.2', 'spo2' => '96%'],
-            'diagnoses' => [
-                ['label' => 'ОРВИ', 'icon' => '🤧', 'correct' => true],
-                ['label' => 'Аппендицит', 'icon' => '🏥', 'correct' => false],
-                ['label' => 'Мигрень', 'icon' => '🧠', 'correct' => false],
-            ],
-        ],
-        3 => [
-            'id' => 3,
-            'fio' => 'Козлов Игорь Анатольевич',
-            'age' => 41,
-            'emoji' => '👨',
-            'avatarBg' => '#FEF3C7',
-            'symptoms' => ['Резкая боль в правом боку', 'Тошнота', 'Температура 37.8'],
-            'vitals' => ['ad' => '130/80', 'pulse' => '92', 'temp' => '37.8', 'spo2' => '98%'],
-            'diagnoses' => [
-                ['label' => 'Аппендицит', 'icon' => '🏥', 'correct' => true],
-                ['label' => 'Отравление', 'icon' => '🤢', 'correct' => false],
-                ['label' => 'Радикулит', 'icon' => '🦴', 'correct' => false],
-            ],
-        ],
-    ];
-}
-
-function getPatient(?int $id): array {
-    $all = getAllPatients();
-    if ($id !== null && isset($all[$id])) return $all[$id];
-    return $all[array_rand($all)]; // случайный, если id не передан/неверный
-}
+require_once __DIR__ . '/patient_data.php';
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
 if ($id === null && $resumeId !== null) {
@@ -91,10 +40,11 @@ $nickParam = $nick !== null ? 'nick=' . urlencode($nick) : '';
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Карточка пациента — Смена 03</title>
-  <link rel="stylesheet" href="assets/css/base.css">
-  <link rel="stylesheet" href="assets/css/style.css">
-  <link rel="stylesheet" href="assets/css/pixel-theme.css">
-  <link rel="stylesheet" href="assets/css/readability.css">
+  <link rel="stylesheet" href="assets/css/base.css?v=2.2">
+  <link rel="stylesheet" href="assets/css/style.css?v=2.2">
+  <link rel="stylesheet" href="assets/css/pixel-theme.css?v=2.2">
+  <link rel="stylesheet" href="assets/css/pixel-window.css?v=2.2">
+  <link rel="stylesheet" href="assets/css/readability.css?v=2.2">
 </head>
 <body>
 
@@ -120,45 +70,123 @@ $nickParam = $nick !== null ? 'nick=' . urlencode($nick) : '';
     </div>
   <?php endif; ?>
 
-  <section class="patient-card">
-
-    <div class="patient-avatar"
-         style="background: <?= htmlspecialchars($patient['avatarBg']) ?>">
-      <?= htmlspecialchars($patient['emoji']) ?>
-    </div>
-
-    <h2 class="patient-name"><?= htmlspecialchars($patient['fio']) ?></h2>
-    <p class="patient-meta"><?= (int)$patient['age'] ?> лет</p>
-
-    <div class="symptoms">
-      <?php foreach ($patient['symptoms'] as $s): ?>
-        <span class="symptom"><?= htmlspecialchars($s) ?></span>
-      <?php endforeach; ?>
-    </div>
-
-    <div class="vitals">
-      <?php
-      $labels = ['ad' => 'АД', 'pulse' => 'Пульс', 'temp' => 'Темп.', 'spo2' => 'SpO₂'];
-      foreach ($labels as $key => $label):
-          if (empty($patient['vitals'][$key])) continue; ?>
-        <div class="vital">
-          <span class="vital-label"><?= $label ?></span>
-          <span class="vital-value"><?= htmlspecialchars($patient['vitals'][$key]) ?></span>
+  <div class="patient-dossier-wrap" style="max-width: 610px; margin: 20px auto;">
+    <aside class="pcard pixel-dossier theme-night" id="patient-dossier" data-theme="night">
+      <div class="pixel-dossier__toolbar">
+        <span class="pixel-dossier__case-tag">Карта №<?= (int)$patient['id'] ?> · Осмотр</span>
+        <div class="pixel-dossier__palette-switch" role="group" aria-label="Палитра окна">
+          <button type="button" class="pixel-palette-btn is-active" data-set-theme="night" title="Ночная смена (под сайт)">🚑 Ночь</button>
+          <button type="button" class="pixel-palette-btn" data-set-theme="classic" title="Классика (из референса)">📋 Макет</button>
+          <button type="button" class="pixel-palette-btn" data-set-theme="paper" title="Медицинский бланк">🩺 Бланк</button>
         </div>
-      <?php endforeach; ?>
-    </div>
+      </div>
+
+      <div class="pixel-dossier__shell">
+        <div class="pixel-dossier__grid">
+
+          <!-- ЛЕВАЯ КОЛОНКА: ЗАКЛЮЧЕНИЕ + ЛИНИИ -->
+          <div class="pixel-dossier__left">
+            <div class="pixel-badge">«Заключение»</div>
+
+            <div class="pixel-ruled-sheet">
+              <div class="pixel-ruled-row pixel-ruled-row--title">Жалобы:</div>
+              <?php foreach ($patient['symptoms'] as $s): ?>
+                <div class="pixel-ruled-row">
+                  <span class="pixel-bullet">▪</span>
+                  <span class="pixel-symptom-text"><?= htmlspecialchars($s) ?></span>
+                </div>
+              <?php endforeach; ?>
+
+              <div class="pixel-ruled-row pixel-ruled-row--title">Показатели:</div>
+              <div class="pixel-ruled-row">
+                <div class="pixel-vitals-row">
+                  <span class="pixel-vital-cell"><span class="pixel-vital-label">АД:</span> <span class="pixel-vital-value"><?= htmlspecialchars($patient['vitals']['ad'] ?? '—') ?></span></span>
+                  <span class="pixel-vital-cell"><span class="pixel-vital-label">Пульс:</span> <span class="pixel-vital-value"><?= htmlspecialchars($patient['vitals']['pulse'] ?? '—') ?></span></span>
+                </div>
+              </div>
+              <div class="pixel-ruled-row">
+                <div class="pixel-vitals-row">
+                  <span class="pixel-vital-cell"><span class="pixel-vital-label">Темп.:</span> <span class="pixel-vital-value"><?= htmlspecialchars($patient['vitals']['temp'] ?? '—') ?>°</span></span>
+                  <span class="pixel-vital-cell"><span class="pixel-vital-label">SpO₂:</span> <span class="pixel-vital-value"><?= htmlspecialchars($patient['vitals']['spo2'] ?? '—') ?></span></span>
+                </div>
+              </div>
+
+              <div class="pixel-ruled-row pixel-ruled-row--empty"></div>
+              <div class="pixel-ruled-row pixel-ruled-row--empty"></div>
+            </div>
+          </div>
+
+          <!-- ЦЕНТРАЛЬНЫЙ РАЗДЕЛИТЕЛЬ -->
+          <div class="pixel-divider-bar" aria-hidden="true"></div>
+
+          <!-- ПРАВАЯ КОЛОНКА: ФОТО + ФИО -->
+          <div class="pixel-dossier__right">
+            <div class="pixel-photo-frame">
+              <div class="pixel-photo-frame__avatar-wrap" style="background: <?= htmlspecialchars($patient['avatarBg'] ?? 'rgba(127,214,176,0.15)') ?>">
+                <?php if (!empty($patient['svg'])): ?>
+                  <span class="pixel-photo-frame__avatar"><?= $patient['svg'] ?></span>
+                <?php else: ?>
+                  <span class="pixel-photo-frame__avatar"><?= htmlspecialchars($patient['emoji'] ?? '🧑') ?></span>
+                <?php endif; ?>
+              </div>
+              <div class="pixel-photo-frame__pulse">
+                <span class="pixel-pulse-dot" aria-hidden="true"></span>
+                <span>Осмотр фельдшера</span>
+              </div>
+            </div>
+
+            <div class="pixel-fio-section">
+              <div class="pixel-fio-row">
+                <span class="pixel-fio-label">Ф.И.О.</span>
+                <div class="pixel-fio-underline">
+                  <span class="pixel-fio-value"><?= htmlspecialchars($patient['fio']) ?></span>
+                </div>
+              </div>
+              <div class="pixel-age-line">Возраст: <?= (int)$patient['age'] ?> <?= plural((int)$patient['age'], 'год', 'года', 'лет') ?></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </aside>
 
     <!-- ПЕРЕЛИНКОВКА: кнопка «Начать лечение» → diagnosis.php?id=... -->
-    <div class="patient-actions">
+    <div class="patient-actions" style="margin-top: 24px; text-align: center;">
       <a href="diagnosis.php?id=<?= (int)$patient['id'] ?><?= $nickParam !== '' ? '&' . e($nickParam) : '' ?>"
-         class="btn btn-primary btn-lg">
+         class="btn btn-primary btn-lg" style="width: 100%; max-width: 320px;">
         💊 Начать лечение
       </a>
     </div>
-
-  </section>
+  </div>
 
 </main>
+
+<script>
+(function() {
+  var dossier = document.getElementById('patient-dossier');
+  if (!dossier) return;
+  var buttons = document.querySelectorAll('[data-set-theme]');
+  var saved = 'night';
+  try { saved = localStorage.getItem('shift_dossier_theme') || 'night'; } catch(e){}
+  apply(saved);
+
+  buttons.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var t = btn.getAttribute('data-set-theme');
+      apply(t);
+      try { localStorage.setItem('shift_dossier_theme', t); } catch(e){}
+    });
+  });
+
+  function apply(t) {
+    dossier.className = 'pcard pixel-dossier theme-' + t;
+    dossier.setAttribute('data-theme', t);
+    buttons.forEach(function(b) {
+      b.classList.toggle('is-active', b.getAttribute('data-set-theme') === t);
+    });
+  }
+})();
+</script>
 
 </body>
 </html>

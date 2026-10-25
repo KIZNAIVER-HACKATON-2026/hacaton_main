@@ -13,6 +13,8 @@
 require_once __DIR__ . '/includes/data.php';
 @include_once __DIR__ . '/includes/pixel_art.php';
 
+const SHIFT_PATIENT_COUNT = 8; // Основной режим: число пациентов за смену.
+
 /** Резервные названия: используются, если базы нет или записи не хватает. */
 const DIAGNOSIS_FALLBACK = [
     1 => ['title' => 'ОРВИ', 'icon' => '🌡️'],
@@ -107,7 +109,9 @@ function shift_patients(): array
 {
     $portraits = get_pixel_portraits();
 
-    return [
+    // Сюжетный пациент эпизода подменяет четвёртую карточку (индекс 3),
+    // поэтому первые восемь карточек сохраняют прежний порядок и сюжетные сцены.
+    $patients = [
         [
             'id' => 1, 'fio' => 'Иванов Пётр Сергеевич', 'short' => 'Пётр, 54',
             'age' => 54, 'emoji' => '🧔', 'avatarBg' => 'rgba(29, 72, 140, 0.25)',
@@ -241,6 +245,8 @@ function shift_patients(): array
             'note' => 'Асимметрия лица, слабость руки и нарушение речи — признаки инсульта. Важно зафиксировать время начала и не задерживать срочную доставку.',
         ],
     ];
+
+    return array_slice($patients, 0, SHIFT_PATIENT_COUNT);
 }
 
 /** Звонки диспетчера между пациентами: решение + последствия. */

@@ -145,7 +145,7 @@ $gameUrl = 'game.php' . ($nick !== null ? '?nick=' . urlencode($nick) : '');
         <h2>Итоги дежурства и рейтинг</h2>
       </div>
       <ul class="rules-list">
-        <li><span class="rules-list__bullet">▪</span> <div><b>Успешная сдача:</b> все 12 пациентов обслужены, репутация выше нуля. Начисляется премия к бюджету подстанции.</div></li>
+        <li><span class="rules-list__bullet">▪</span> <div><b>Успешная сдача:</b> все 8 пациентов обслужены, репутация выше нуля. Начисляется премия к бюджету подстанции.</div></li>
         <li><span class="rules-list__bullet">▪</span> <div><b>Истечение времени:</b> дежурство завершается по звонку утренней пересменки, набранные очки засчитываются.</div></li>
         <li><span class="rules-list__bullet">▪</span> <div><b>Провал:</b> репутация достигла 0. Разбор полётов у главврача.</div></li>
       </ul>
